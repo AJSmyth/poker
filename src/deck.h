@@ -52,4 +52,9 @@ STAGES stage;
 }GAMESTATE;
 
 DECK INIT();
+DECK ShuffleCards (DECK deck);
+DECK AssignCards (PLAYER player[],DECK deck);
+void swap(int *a, int *b);
+void random(int arr[], int n);
+
 
