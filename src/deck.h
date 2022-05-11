@@ -50,3 +50,6 @@ ACTIONS action;
 typedef struct{
 STAGES stage;
 }GAMESTATE;
+
+DECK INIT();
+
