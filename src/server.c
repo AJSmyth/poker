@@ -1,4 +1,5 @@
 #include "deck.h"
+#include <stdio.h>
 
 int main(){
 CARD c1 = {SPADES, 3};
