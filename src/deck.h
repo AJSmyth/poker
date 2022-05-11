@@ -35,7 +35,7 @@ typedef struct{ //CARD is a struct with variables of a unique suit and rank
 }CARD;
 
 typedef struct{ // DECK is a struct of a static CARD object which is an array of 52 CARD types
-CARD deck[52];
+CARD cards[52];
 int TOP;
 }DECK;
 
@@ -44,6 +44,7 @@ int Balance;
 int Bid;
 CARD card1;
 CARD card2;
+ACTIONS action;
 }PLAYER;
 
 typedef struct{
