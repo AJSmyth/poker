@@ -1,2 +1,2 @@
 main: 
-	gcc src/server.c -o bin/poker
+	gcc src/server.c src/deck.c -o bin/poker
