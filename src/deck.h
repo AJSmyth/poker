@@ -10,9 +10,9 @@ typedef enum{ // 4 suits in a deck of cards
 
 typedef enum{ //Face cards are assigned value for assignment purposes
  ACE = 1,
- JACK = 10,
- QUEEN = 11,
- KING = 12
+ JACK = 11,
+ QUEEN = 12,
+ KING = 13
 }RANK;
 
 typedef enum{
