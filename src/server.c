@@ -11,20 +11,21 @@ int main(){
   p1.card2 = c2;
   printf("%d %d", p1.card1.rank, p1.card2.suit);*/
 
-  PLAYER player[4];
   deck = ShuffleCards (deck);
 
-  deck = AssignCards(player, deck);
-  
-  
-  for(int i = 0;i<=4;i++) //CHECKING THE CARDS EACH PLAYER HAS
-  {
-      printf("%d Player suit is %d and rank is %d\n", i , player[i].card1.suit, player[i].card1.rank);
-      printf("%d Player suit is %d and rank is %d\n", i , player[i].card2.suit, player[i].card2.rank);
-  }
+  int n = 5; //Number of players
 
-  for(int i = 0;i<=51;i++) //CHECKING THE REMAINING CARDS IN THE DECK
+  PLAYER player[n-1];
+
+  GAMESTATE gamestate;
+  gamestate.stage = PREFLOP;
+  AssignCards(player, deck, n-1, gamestate);
+  PREFLOP1 (player, deck, n-1);
+
+
+  for(int i = 0;i<=4;i++)
   {
-      printf("Deck %d suit is %d and rank is %d\n", i , deck.cards[i].suit, deck.cards[i].rank);
+    printf("%d Player suit is %d and rank is %d\n", i , player[i].card1.suit, player[i].card1.rank);
+    printf("%d Player suit is %d and rank is %d\n", i , player[i].card2.suit, player[i].card2.rank);
+    printf("%d Player Bet is %d\n", i ,player[i].Bid);
   }
-}
