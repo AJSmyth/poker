@@ -23,6 +23,12 @@ typedef enum{
 }STAGES;
 
 typedef enum{
+ LITTLEBLIND = 0,
+ BIGBLIND = 1,
+ NORMAL = 2
+}ROLE;
+
+typedef enum{
  FOLD,
  CALL,
  CHECK,
@@ -45,6 +51,7 @@ int Bid;
 CARD card1;
 CARD card2;
 ACTIONS action;
+ROLE role;
 }PLAYER;
 
 typedef struct{
@@ -52,9 +59,10 @@ STAGES stage;
 }GAMESTATE;
 
 DECK INIT();
-DECK ShuffleCards (DECK deck);
-DECK AssignCards (PLAYER player[],DECK deck);
+DECK ShuffleCards (DECK deck); //Shuffles the deck 
+void AssignCards (PLAYER player[],DECK deck, int n, GAMESTATE G); //Assigns Cards and Blinds to players
+void PREFLOP1(PLAYER player[], DECK deck, int n); //Bidding in PreFlop
+int EQUALBIDS(PLAYER player[], int n); //Checking if all bids are equal to proceed further
+
 void swap(int *a, int *b);
 void random(int arr[], int n);
-
-
