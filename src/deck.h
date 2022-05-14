@@ -23,7 +23,7 @@ typedef enum{
 }STAGES;
 
 typedef enum{
- LITTLEBLIND = 0,
+ SMALLBLIND = 0,
  BIGBLIND = 1,
  NORMAL = 2
 }ROLE;
