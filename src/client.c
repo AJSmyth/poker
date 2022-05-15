@@ -1,71 +1,80 @@
 #include <gtk/gtk.h>
+#include "client.h"
 
-/* This is a callback function. The data arguments are ignored
- *  * in this example. More on callbacks below. */
-static void hello( GtkWidget *widget, gpointer   data ) {
-	    g_print ("Hello World\n");
-}
+static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
+static void destroy(GtkWidget *widget, gpointer data);
 
-static gboolean delete_event( GtkWidget *widget, GdkEvent  *event, gpointer   data ) {
-	g_print ("delete event occurred\n");
-	return FALSE;
-}
-
-/* Another callback */
-static void destroy(GtkWidget *widget, gpointer data) {
-	    gtk_main_quit ();
-}
-
+static void startGame(GtkWidget *widget, gpointer data);
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
-						      
+
 
 int main( int   argc, char *argv[] ) {
+	MenuObjects m = { NULL };
+	GameObjects g = { NULL };
+	Game game = { MENU, m, g };
+
 	/* GtkWidget is the storage type for widgets */
 	GtkWidget *window;
-	GtkWidget *button;
-	GtkWidget *canvas;
-	GtkWidget *vbox;
+	GtkWidget *mainVbox;
 
-	/* This is called in all GTK applications. Arguments are parsed
-	*      * from the command line and are returned to the application. */
 	gtk_init (&argc, &argv);
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
-	g_signal_connect(G_OBJECT (window), "delete_event", G_CALLBACK(delete_event), NULL);
-	g_signal_connect(G_OBJECT (window), "destroy", G_CALLBACK (destroy), NULL);
-
-
-	button = gtk_button_new_with_label("Hello World");
-	canvas = gtk_drawing_area_new();
-	vbox = gtk_vbox_new(FALSE, 10);
-
 	gtk_container_set_border_width(GTK_CONTAINER(window), 1);
-	gtk_widget_set_size_request(canvas, 480, 110);
+	g_signal_connect(G_OBJECT(window), "delete_event", G_CALLBACK(delete_event), NULL);
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(destroy), NULL);
+	mainVbox = gtk_vbox_new(FALSE, 1);
+	gtk_container_add(GTK_CONTAINER(window), mainVbox);
 
-	g_signal_connect(G_OBJECT (button), "clicked", G_CALLBACK (hello), NULL);
-	g_signal_connect_swapped(G_OBJECT (button), "clicked", G_CALLBACK (gtk_widget_destroy), G_OBJECT (window));
-	g_signal_connect(G_OBJECT(canvas), "expose-event", G_CALLBACK(paint), NULL);
+	//=================================== MENU ====================================
+	//initialize menu widgets
+	GtkWidget *menuTitle = gtk_label_new("Queen's Poker");
+	GtkWidget *menuStartBtn = gtk_button_new_with_label("Start");
+	game.menu.vbox = gtk_vbox_new(FALSE, 1);
 
-	gtk_container_add(GTK_CONTAINER(window), vbox);
+	//menu signals
+	g_signal_connect(G_OBJECT(menuStartBtn), "clicked", G_CALLBACK(startGame), &game);
 
-	gtk_box_pack_start(vbox, canvas, FALSE, FALSE, 10);
-	gtk_box_pack_start(vbox, button, FALSE, FALSE, 10);
+	//menu container packing
+	gtk_box_pack_start(mainVbox, game.menu.vbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(game.menu.vbox, menuTitle, FALSE, FALSE, 10);
+	gtk_box_pack_start(game.menu.vbox, menuStartBtn, FALSE, FALSE, 10);
 
-	/* The final step is to display this newly created widget. */
-	gtk_widget_show(vbox);
-	gtk_widget_show(button);
-	gtk_widget_show(canvas);
+	gtk_widget_show(menuTitle);
+	gtk_widget_show(menuStartBtn);
+	gtk_widget_show(game.menu.vbox);
 
-	/* and the window */
+	//=================================== GAME =====================================	
+	//initialize game widgets
+	GtkWidget *gameCanvas = gtk_drawing_area_new();
+	game.game.vbox = gtk_vbox_new(FALSE, 1);
+	gtk_widget_set_size_request(gameCanvas, 480, 120);
+
+	//game signals
+	g_signal_connect(G_OBJECT(gameCanvas), "expose-event", G_CALLBACK(paint), NULL);
+
+	//game container packing
+	gtk_box_pack_start(mainVbox, game.game.vbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(game.game.vbox, gameCanvas, FALSE, FALSE, 10);
+
+	gtk_widget_show(gameCanvas);
+
+	gtk_widget_show(mainVbox);
 	gtk_widget_show(window);
 
-	/* All GTK applications must have a gtk_main(). Control ends here
-	*      * and waits for an event to occur (like a key press or
-	*           * mouse event). */
-	gtk_main ();
-
+	gtk_main();
 	return 0;
 }
+
+
+
+static void startGame(GtkWidget *widget, gpointer data) {
+	Game *game = data;
+	gtk_widget_hide(game->menu.vbox);
+	gtk_widget_show(game->game.vbox);
+	game->state = GAME;
+}
+
+
 
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data) {
 	gint width, height;
@@ -112,4 +121,12 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data) {
 
 	cairo_destroy (cr);
 
+}
+
+static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
+	return FALSE;
+}
+
+static void destroy(GtkWidget *widget, gpointer data) {
+	gtk_main_quit ();
 }
