@@ -1,2 +1,2 @@
 main:
-	gcc `pkg-config --cflags gtk+-3.0` -o bin/poker src/client.c `pkg-config --libs gtk+-3.0`
+	gcc src/client.c -o bin/poker `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0`
