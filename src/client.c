@@ -1,17 +1,22 @@
 #include <gtk/gtk.h>
+#include "deck.h"
 #include "client.h"
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
 static void destroy(GtkWidget *widget, gpointer data);
 
 static void startGame(GtkWidget *widget, gpointer data);
+static void quitGame(GtkWidget *widget, gpointer data);
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
 
 
 int main( int   argc, char *argv[] ) {
-	MenuObjects m = { NULL };
-	GameObjects g = { NULL };
-	Game game = { MENU, m, g };
+	CARD empty = {-1, -1};
+	PLAYER p = {0, 0, empty, empty, 0, 0};
+	MenuObjects m = {NULL};
+	GameObjects g = {NULL};
+
+	Game game = {MENU, m, g, p};
 
 	/* GtkWidget is the storage type for widgets */
 	GtkWidget *window;
@@ -19,6 +24,8 @@ int main( int   argc, char *argv[] ) {
 
 	gtk_init (&argc, &argv);
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_widget_set_size_request(window, 640, 480);
+	gtk_window_set_resizable(window, FALSE);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 1);
 	g_signal_connect(G_OBJECT(window), "delete_event", G_CALLBACK(delete_event), NULL);
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(destroy), NULL);
@@ -46,17 +53,40 @@ int main( int   argc, char *argv[] ) {
 	//=================================== GAME =====================================	
 	//initialize game widgets
 	GtkWidget *gameCanvas = gtk_drawing_area_new();
+	GtkWidget *gameQuit = gtk_button_new_with_label("Quit");
+	GtkWidget *gameFold = gtk_button_new_with_label("Fold");
+	GtkWidget *gameCall = gtk_button_new_with_label("Call");
+	GtkWidget *gameCheck = gtk_button_new_with_label("Check");
+	GtkWidget *gameRaise = gtk_button_new_with_label("Raise");
+	GtkWidget *gameBetAdj = gtk_adjustment_new(1,0,1000,1,5,0);
+	GtkWidget *gameBet = gtk_spin_button_new(gameBetAdj, 0.1, 0);
 	game.game.vbox = gtk_vbox_new(FALSE, 1);
-	gtk_widget_set_size_request(gameCanvas, 480, 120);
+	GtkWidget *gameHboxBtn = gtk_hbox_new(TRUE, 1);
+	gtk_widget_set_size_request(gameCanvas, 640, 420);
 
 	//game signals
 	g_signal_connect(G_OBJECT(gameCanvas), "expose-event", G_CALLBACK(paint), NULL);
+	g_signal_connect(G_OBJECT(gameQuit), "clicked", G_CALLBACK(quitGame), &game);
 
 	//game container packing
 	gtk_box_pack_start(mainVbox, game.game.vbox, FALSE, FALSE, 0);
-	gtk_box_pack_start(game.game.vbox, gameCanvas, FALSE, FALSE, 10);
+	gtk_box_pack_start(game.game.vbox, gameCanvas, FALSE, FALSE, 0);
+	gtk_box_pack_start(game.game.vbox, gameHboxBtn, FALSE, FALSE, 0);
+	gtk_box_pack_start(gameHboxBtn, gameQuit, TRUE, TRUE, 10);
+	gtk_box_pack_start(gameHboxBtn, gameFold, TRUE, TRUE, 10);
+	gtk_box_pack_start(gameHboxBtn, gameCall, TRUE, TRUE, 10);
+	gtk_box_pack_start(gameHboxBtn, gameCheck, TRUE, TRUE, 10);
+	gtk_box_pack_start(gameHboxBtn, gameRaise, TRUE, TRUE, 10);
+	gtk_box_pack_start(gameHboxBtn, gameBet, TRUE, TRUE, 10);
 
 	gtk_widget_show(gameCanvas);
+	gtk_widget_show(gameQuit);
+	gtk_widget_show(gameFold);
+	gtk_widget_show(gameCall);
+	gtk_widget_show(gameCheck);
+	gtk_widget_show(gameRaise);
+	gtk_widget_show(gameBet);
+	gtk_widget_show(gameHboxBtn);
 
 	gtk_widget_show(mainVbox);
 	gtk_widget_show(window);
@@ -72,6 +102,15 @@ static void startGame(GtkWidget *widget, gpointer data) {
 	gtk_widget_hide(game->menu.vbox);
 	gtk_widget_show(game->game.vbox);
 	game->state = GAME;
+}
+
+
+
+static void quitGame(GtkWidget *widget, gpointer data) {
+	Game *game = data;
+	gtk_widget_hide(game->game.vbox);
+	gtk_widget_show(game->menu.vbox);
+	game->state = MENU;
 }
 
 
