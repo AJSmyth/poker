@@ -25,7 +25,7 @@ int main( int   argc, char *argv[] ) {
 	gtk_init (&argc, &argv);
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_widget_set_size_request(window, 640, 480);
-	gtk_window_set_resizable(window, FALSE);
+	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 1);
 	g_signal_connect(G_OBJECT(window), "delete_event", G_CALLBACK(delete_event), NULL);
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(destroy), NULL);
@@ -42,9 +42,9 @@ int main( int   argc, char *argv[] ) {
 	g_signal_connect(G_OBJECT(menuStartBtn), "clicked", G_CALLBACK(startGame), &game);
 
 	//menu container packing
-	gtk_box_pack_start(mainVbox, game.menu.vbox, FALSE, FALSE, 0);
-	gtk_box_pack_start(game.menu.vbox, menuTitle, FALSE, FALSE, 10);
-	gtk_box_pack_start(game.menu.vbox, menuStartBtn, FALSE, FALSE, 10);
+	gtk_box_pack_start(GTK_BOX(mainVbox), game.menu.vbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(game.menu.vbox), menuTitle, FALSE, FALSE, 10);
+	gtk_box_pack_start(GTK_BOX(game.menu.vbox), menuStartBtn, FALSE, FALSE, 10);
 
 	gtk_widget_show(menuTitle);
 	gtk_widget_show(menuStartBtn);
@@ -58,7 +58,7 @@ int main( int   argc, char *argv[] ) {
 	GtkWidget *gameCall = gtk_button_new_with_label("Call");
 	GtkWidget *gameCheck = gtk_button_new_with_label("Check");
 	GtkWidget *gameRaise = gtk_button_new_with_label("Raise");
-	GtkWidget *gameBetAdj = gtk_adjustment_new(1,0,1000,1,5,0);
+	GtkAdjustment *gameBetAdj = GTK_ADJUSTMENT(gtk_adjustment_new(1,0,1000,1,5,0));
 	GtkWidget *gameBet = gtk_spin_button_new(gameBetAdj, 0.1, 0);
 	game.game.vbox = gtk_vbox_new(FALSE, 1);
 	GtkWidget *gameHboxBtn = gtk_hbox_new(TRUE, 1);
@@ -69,15 +69,15 @@ int main( int   argc, char *argv[] ) {
 	g_signal_connect(G_OBJECT(gameQuit), "clicked", G_CALLBACK(quitGame), &game);
 
 	//game container packing
-	gtk_box_pack_start(mainVbox, game.game.vbox, FALSE, FALSE, 0);
-	gtk_box_pack_start(game.game.vbox, gameCanvas, FALSE, FALSE, 0);
-	gtk_box_pack_start(game.game.vbox, gameHboxBtn, FALSE, FALSE, 0);
-	gtk_box_pack_start(gameHboxBtn, gameQuit, TRUE, TRUE, 10);
-	gtk_box_pack_start(gameHboxBtn, gameFold, TRUE, TRUE, 10);
-	gtk_box_pack_start(gameHboxBtn, gameCall, TRUE, TRUE, 10);
-	gtk_box_pack_start(gameHboxBtn, gameCheck, TRUE, TRUE, 10);
-	gtk_box_pack_start(gameHboxBtn, gameRaise, TRUE, TRUE, 10);
-	gtk_box_pack_start(gameHboxBtn, gameBet, TRUE, TRUE, 10);
+	gtk_box_pack_start(GTK_BOX(mainVbox), game.game.vbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(game.game.vbox), gameCanvas, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(game.game.vbox), gameHboxBtn, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameQuit, TRUE, TRUE, 10);
+	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameFold, TRUE, TRUE, 10);
+	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameCall, TRUE, TRUE, 10);
+	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameCheck, TRUE, TRUE, 10);
+	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameRaise, TRUE, TRUE, 10);
+	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameBet, TRUE, TRUE, 10);
 
 	gtk_widget_show(gameCanvas);
 	gtk_widget_show(gameQuit);
