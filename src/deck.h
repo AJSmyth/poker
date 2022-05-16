@@ -54,9 +54,21 @@ ACTIONS action;
 ROLE role;
 }PLAYER;
 
+typedef struct Node Node;
+struct Node{
+	void *data;
+	Node *next;
+};
+
+typedef struct{
+	Node *first;
+	Node *last;
+} LL;
+
 typedef struct{
 STAGES stage;
-}GAMESTATE;
+LL players;
+} GAMESTATE;
 
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
@@ -66,3 +78,4 @@ int EQUALBIDS(PLAYER player[], int n); //Checking if all bids are equal to proce
 
 void swap(int *a, int *b);
 void random(int arr[], int n);
+
