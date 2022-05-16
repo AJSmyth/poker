@@ -61,13 +61,12 @@ struct Node{
 };
 
 typedef struct{
-	Node *first;
-	Node *last;
-} LL;
+	Node *head;
+} CLL;
 
 typedef struct{
 STAGES stage;
-LL players;
+CLL players;
 } GAMESTATE;
 
 DECK INIT();
