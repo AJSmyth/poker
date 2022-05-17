@@ -1,76 +1,76 @@
 #include "deck.h"
+#include "game.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-void PREFLOP1(PLAYER player[], DECK deck, int n)
+void PREFLOP1(GAMESTATE game, int n)
 {
     int option = 0;
     int raise = 0;
     int min_bid = 10;
-    int x = 0;
+    int player_temp = 0;
 
     while (1)
     {
-        if(EQUALBIDS(player, n) == 1) //Bidding goes on untill everyone has equal bids
+        if(EQUALBIDS(game, n) == 1) //Bidding goes on untill everyone has equal bids
         {
             break;
         }
         
-        if (player[x].action == FOLD) //If a player folded, we do not ask his input again
+        if (game.players[n].action == FOLD) //If a player folded, we do not ask his input again
         {
-            x++;
-            if(x == n+1)
+            player_temp++;
+            if(player_temp == n+1)
             {
-                x = 0;
+                player_temp = 0;
             }
             continue;
         }
 
-        printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ",x);
+        printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ", player_temp);
         scanf("%d",&option);
 
         switch (option)
         {
             case 1 : //Calling the Bid
-                player[x].action = CALL;
-                player[x].Bid = min_bid;
+                game.players[n].action = CALL;
+                game.players[n].Bid = min_bid;
                 break;
 
             case 2 : //Raising the bid
-                player[x].action = RAISE;
+                game.players[n].action = RAISE;
                 printf("Enter the raise amount: ");
                 scanf("%d",&raise);
                 min_bid = min_bid + raise;
-                player[x].Bid = min_bid;
+                game.players[n].Bid = min_bid;
                 break;
 
             case 3: //Folding
-                player[x].action = FOLD;
+                game.players[n].action = FOLD;
                 break;
         }
-        x++;
-        if(x == n+1) //To keep the loop going within the bounds
+        player_temp++;
+        if(player_temp == n+1) //To keep the loop going within the bounds
         {
-            x = 0;
+            player_temp = 0;
         }
 
     } 
 }
 
-
-int EQUALBIDS(PLAYER player[], int n)
+int EQUALBIDS(GAMESTATE game, int n)
 //This works only if player[0] did not fold (For now)
 {
-    if (player[0].action != FOLD) 
+    if (game.players[n].action != FOLD) 
     {
         for(int a = 1; a <= n ; a++)
         {
-            if (player[a].action == FOLD) //Not considering the bid of a folded player
+            if (game.players[n].action == FOLD) //Not considering the bid of a folded player
                 {
                    continue;
                 }
 
-            if (player[0].Bid == player[a].Bid) //Checking if all bids are equal
+            if (game.players[a].Bid == game.players[a].Bid) //Checking if all bids are equal
                 {
                 if (a == n)
                     {

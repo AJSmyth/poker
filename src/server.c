@@ -17,9 +17,9 @@ int main(){
 
   PLAYER player[n-1];
 
-  GAMESTATE gamestate;
-  gamestate.stage = PREFLOP;
-  AssignCards(player, deck, n-1, gamestate);
+  GAMESTATE game;
+  game.stage = PREFLOP;
+  AssignCards(player, deck, n-1, game);
   PREFLOP1 (player, deck, n-1);
 
 
@@ -29,3 +29,4 @@ int main(){
     printf("%d Player suit is %d and rank is %d\n", i , player[i].card2.suit, player[i].card2.rank);
     printf("%d Player Bet is %d\n", i ,player[i].Bid);
   }
+}

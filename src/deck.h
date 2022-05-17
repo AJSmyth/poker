@@ -42,7 +42,7 @@ typedef struct{ //CARD is a struct with variables of a unique suit and rank
 
 typedef struct{ // DECK is a struct of a static CARD object which is an array of 52 CARD types
 CARD cards[52];
-int TOP;
+int BOTTOM;
 }DECK;
 
 typedef struct{
@@ -54,27 +54,15 @@ ACTIONS action;
 ROLE role;
 }PLAYER;
 
-typedef struct Node Node;
-struct Node{
-	void *data;
-	Node *next;
-};
-
-typedef struct{
-	Node *head;
-} CLL;
-
 typedef struct{
 STAGES stage;
-CLL players;
+PLAYER players[9];
+DECK communityCards[5];
+int pot;
+int numberPlayers;
 } GAMESTATE;
 
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
+
 void AssignCards (PLAYER player[],DECK deck, int n, GAMESTATE G); //Assigns Cards and Blinds to players
-void PREFLOP1(PLAYER player[], DECK deck, int n); //Bidding in PreFlop
-int EQUALBIDS(PLAYER player[], int n); //Checking if all bids are equal to proceed further
-
-void swap(int *a, int *b);
-void random(int arr[], int n);
-
