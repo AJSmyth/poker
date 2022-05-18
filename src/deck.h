@@ -32,7 +32,8 @@ typedef enum{
  FOLD,
  CALL,
  CHECK,
- RAISE
+ RAISE,
+ NoAction
 }ACTIONS;
 
 typedef struct{ //CARD is a struct with variables of a unique suit and rank
@@ -56,13 +57,20 @@ ROLE role;
 
 typedef struct{
 STAGES stage;
-PLAYER players[9];
-DECK communityCards[5];
+PLAYER players[5];
+DECK communityCards;
 int pot;
 int numberPlayers;
+DECK shuffleDeck;
+int GameCount;
 } GAMESTATE;
 
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
+GAMESTATE AssignCards (GAMESTATE G); //Assigns Cards and Blinds to players
+GAMESTATE PREFLOP1(GAMESTATE game); //Bidding in PreFlop
+int EQUALBIDS(PLAYER player[], int n); //Checking if all bids are equal to proceed further
 
-void AssignCards (PLAYER player[],DECK deck, int n, GAMESTATE G); //Assigns Cards and Blinds to players
+void swap(int *a, int *b);
+void random(int arr[], int n);
+
