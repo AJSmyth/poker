@@ -1,62 +1,64 @@
 #include "deck.h"
-#include "game.h"
 #include <stdlib.h>
+#include <time.h>
 #include <stdio.h>
 
-void PREFLOP1(GAMESTATE game, int n)
+GAMESTATE PREFLOP1(GAMESTATE game)
 {
     int option = 0;
     int raise = 0;
     int min_bid = 10;
-    int player_temp = 0;
+    int x = 0;
 
     while (1)
     {
-        if(EQUALBIDS(game, n) == 1) //Bidding goes on untill everyone has equal bids
+        if(EQUALBIDS(game.players, game.numberPlayers) == 1) //Bidding goes on untill everyone has equal bids
         {
             break;
         }
         
-        if (game.players[n].action == FOLD) //If a player folded, we do not ask his input again
+        if (game.players[x].action == FOLD) //If a player folded, we do not ask his input again
         {
-            player_temp++;
-            if(player_temp == n+1)
+            x++;
+            if(x == game.numberPlayers+1)
             {
-                player_temp = 0;
+                x = 0;
             }
             continue;
         }
 
-        printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ", player_temp);
+        printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ",x);
         scanf("%d",&option);
 
         switch (option)
         {
             case 1 : //Calling the Bid
-                game.players[n].action = CALL;
-                game.players[n].Bid = min_bid;
+                game.players[x].action = CALL;
+                game.players[x].Bid = min_bid;
                 break;
 
             case 2 : //Raising the bid
-                game.players[n].action = RAISE;
+                game.players[x].action = RAISE;
                 printf("Enter the raise amount: ");
                 scanf("%d",&raise);
                 min_bid = min_bid + raise;
-                game.players[n].Bid = min_bid;
+                game.players[x].Bid = min_bid;
                 break;
 
             case 3: //Folding
-                game.players[n].action = FOLD;
+                game.players[x].action = FOLD;
                 break;
         }
-        player_temp++;
-        if(player_temp == n+1) //To keep the loop going within the bounds
+        x++;
+        if(x == game.numberPlayers+1) //To keep the loop going within the bounds
         {
-            player_temp = 0;
+            x = 0;
         }
 
     } 
+    return game;
 }
+
 
 int EQUALBIDS(GAMESTATE game, int n)
 //This works only if player[0] did not fold (For now)
