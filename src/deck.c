@@ -25,7 +25,7 @@ DECK ShuffleCards (DECK deck)
     int a[52];
     int x = 0;
 
-    for (int X = 0 ; X < 53 ; X++) //Asssign values from 0-52 in an Array
+    for (int X = 0 ; X < 53 ; X++) //Assign values from 0-52 in an Array
     {
         a[X] = X;
     }
@@ -39,54 +39,60 @@ DECK ShuffleCards (DECK deck)
     return shuffle;
 }
 
-void AssignCards (PLAYER player[], DECK deck, int n, GAMESTATE G)
+GAMESTATE AssignCards (GAMESTATE game)
 {
     int i,x;
-    PLAYER P[n+1]; //Temporary variable
+    PLAYER P[5]; //Temporary variable
 
-    for (i = 0, x = 0; i <= 5; i++, x=x+2)
+    for (i = 0, x = 0; i <= 4; i++, x=x+2)
     {
-        player[i].card1 = deck.cards[x]; //Assign 1st Card to Player[i]
-        player[i].card2 = deck.cards[x+1]; //Assign 2nd Card to Player[i]
+        game.players[i].card1 = game.shuffleDeck.cards[x]; //Assign 1st Card to players
+        game.players[i].card2 = game.shuffleDeck.cards[x+1]; //Assign 2nd Card to players
     }
 
-    for(int a = 0; a<= 41 - 10;a++)
+    for(int a = 0; a<= 51 - 10;a++)
     {
-        deck.cards[a] = deck.cards[a+10]; //Changing the deck by removing the assigned cards
+        game.shuffleDeck.cards[a] = game.shuffleDeck.cards[a+10]; //Change the deck by removing the assiged cards
     }
     
-    for (int a = 0; a <= n ; a++) //Making P equal to Player as a temporary variable
+    for (int a = 0; a<= 4;a++)
     {
-        P[a] = player[a];
+        game.communityCards.cards[a] = game.shuffleDeck.cards[a];
+    }
+
+    for (int a = 0; a <= 4 ; a++) //Making P equal to players as a temporary variable
+    {
+        P[a] = game.players[a];
     }
     
-    if (G.stage = PREFLOP)
+    if (game.GameCount == 0)
     {
-        player[0].role = 0; //Assigning small blind to player[0]
-        player[0].Bid = 5; //Assigning default bid on small blind
-        player[1].role = 1; //Assigning big blind to player[1]
-        player[1].Bid = 10; //Assigning default bid on big blind
-        for (int a = 2; a <= n ; a++)
+        game.players[0].role = 0; //Assigning small blind to game.players[0]
+        game.players[0].Bid = 5; //Assigning default bid on small blind
+        game.players[1].role = 1; //Assigning bigame blind to game.players[1]
+        game.players[1].Bid = 10; //Assigning default bid on big blind
+        for (int a = 2; a <= 4 ; a++)
         {
-            player[a].role = 2; //Assigning other players ar normal players
-            player[a].Bid = 0; //Assigning 0 bid for non-Blind player
+            game.players[a].role = 2; //Assigning other game.players ar normal players
+            game.players[a].Bid = 0; //Assigning 0 bid for non-Blind players
         }
     }
 
     else 
     {
-        for (int a = 0; a <= n ; a++) //Moving the player roles[Blinds] and assigning 
+        for (int a = 0; a <= 4 ; a++) //Moving the players roles[Blinds] and assigning 
         {                             //default bids on binds, at the start of the round   
             if (a > 0)
-          {
-                player[a].role = P[a-1].role;
+            {
+                game.players[a].role = P[a-1].role;
             }
 
             else 
             {
-                player[a].role = P[n].role;
+                game.players[a].role = P[4].role;
             }
         }
     }
-    //return deck;
+    return game;
 }
+
