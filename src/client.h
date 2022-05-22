@@ -14,6 +14,7 @@ typedef struct {
 
 typedef struct {
 	GtkWidget *vbox;
+	GtkWidget *mainLabel;
 } GameObjects;
 
 typedef struct {

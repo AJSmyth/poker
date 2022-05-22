@@ -10,13 +10,14 @@ static void quitGame(GtkWidget *widget, gpointer data);
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
 
 
-int main( int   argc, char *argv[] ) {
+int main(int argc, char *argv[] ) {
 	CARD empty = {-1, -1};
 	PLAYER p = {0, 0, empty, empty, 0, 0};
 	MenuObjects m = {NULL};
 	GameObjects g = {NULL};
 
 	Game game = {MENU, m, g, p};
+	int me = 0; //getIDfromserver()
 
 	/* GtkWidget is the storage type for widgets */
 	GtkWidget *window;
@@ -61,6 +62,7 @@ int main( int   argc, char *argv[] ) {
 	GtkAdjustment *gameBetAdj = GTK_ADJUSTMENT(gtk_adjustment_new(1,0,1000,1,5,0));
 	GtkWidget *gameBet = gtk_spin_button_new(gameBetAdj, 0.1, 0);
 	game.game.vbox = gtk_vbox_new(FALSE, 1);
+	game.game.mainLabel = gtk_label_new("Ur move dumbass");
 	GtkWidget *gameHboxBtn = gtk_hbox_new(TRUE, 1);
 	gtk_widget_set_size_request(gameCanvas, 640, 420);
 
@@ -72,6 +74,7 @@ int main( int   argc, char *argv[] ) {
 	gtk_box_pack_start(GTK_BOX(mainVbox), game.game.vbox, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(game.game.vbox), gameCanvas, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(game.game.vbox), gameHboxBtn, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(game.game.vbox), game.game.mainLabel, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameQuit, TRUE, TRUE, 10);
 	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameFold, TRUE, TRUE, 10);
 	gtk_box_pack_start(GTK_BOX(gameHboxBtn), gameCall, TRUE, TRUE, 10);
@@ -86,6 +89,7 @@ int main( int   argc, char *argv[] ) {
 	gtk_widget_show(gameCheck);
 	gtk_widget_show(gameRaise);
 	gtk_widget_show(gameBet);
+	gtk_widget_show(game.game.mainLabel);
 	gtk_widget_show(gameHboxBtn);
 
 	gtk_widget_show(mainVbox);
@@ -102,6 +106,10 @@ static void startGame(GtkWidget *widget, gpointer data) {
 	gtk_widget_hide(game->menu.vbox);
 	gtk_widget_show(game->game.vbox);
 	game->state = GAME;
+	
+	//connect to server
+	//
+	//
 }
 
 
@@ -112,6 +120,14 @@ static void quitGame(GtkWidget *widget, gpointer data) {
 	gtk_widget_show(game->menu.vbox);
 	game->state = MENU;
 }
+
+
+
+void gameLoop(GtkWidget *widget, gpointer data) {
+	Game g* = data;
+
+	if g->gs.turn
+
 
 
 
