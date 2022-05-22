@@ -59,6 +59,10 @@ GAMESTATE PREFLOP1(GAMESTATE game)
     return game;
 }
 
+GAMESTATE FLOP(GAMESTATE game) {
+    
+}
+
 
 int EQUALBIDS(GAMESTATE game, int n)
 //This works only if player[0] did not fold (For now)
