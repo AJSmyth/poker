@@ -3,104 +3,99 @@
 #include <time.h>
 #include <stdio.h>
 
-GAMESTATE PREFLOP1(GAMESTATE game)
-{
-    int option = 0;
-    int raise = 0;
-    int min_bid = 10;
-    int x = 0;
+// GAMESTATE PREFLOP1(GAMESTATE game)
+// {
+//     int option = 0;
+//     int raise = 0;
+//     int min_bid = 10;
+//     int x = 0;
 
-    while (1)
-    {
-        if(EQUALBIDS(game) == 1) //Bidding goes on untill everyone has equal bids
-        {
-            break;
-        }
-        
-        if (game.players[x].action == FOLD) //If a player folded, we do not ask his input again
-        {
-            x++;
-            if(x == game.numberPlayers+1)
-            {
-                x = 0;
-            }
-            continue;
-        }
+//     while (EQUALBIDS(game) == 0)
+//     {
+//         if (game.players[x].action == FOLD) //If a player folded, we do not ask his input again
+//         {
+//             x++;
+//             if(x == game.numberPlayers+1)
+//             {
+//                 x = 0;
+//             }
+//             continue;
+//         }
 
-        printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ",x);
-        scanf("%d",&option);
+//         printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ",x);
+//         scanf("%d",&option);
 
-        switch (option)
-        {
-            case 1 : //Calling the Bid
-                game.players[x].action = CALL;
-                game.players[x].Bid = min_bid;
-                break;
+//         switch (option)
+//         {
+//             case 1 : //Calling the Bid
+//                 game.players[x].action = CALL;
+//                 game.players[x].Bid = min_bid;
+//                 break;
 
-            case 2 : //Raising the bid
-                game.players[x].action = RAISE;
-                printf("Enter the raise amount: ");
-                scanf("%d",&raise);
-                min_bid = min_bid + raise;
-                game.players[x].Bid = min_bid;
-                break;
+//             case 2 : //Raising the bid
+//                 game.players[x].action = RAISE;
+//                 printf("Enter the raise amount: ");
+//                 scanf("%d",&raise);
+//                 min_bid = min_bid + raise;
+//                 game.players[x].Bid = min_bid;
+//                 break;
 
-            case 3: //Folding
-                game.players[x].action = FOLD;
-                break;
-        }
-        x++;
-        if(x == game.numberPlayers+1) //To keep the loop going within the bounds
-        {
-            x = 0;
-        }
+//             case 3: //Folding
+//                 game.players[x].action = FOLD;
+//                 break;
+//         }
+//         x++;
+//         if(x == game.numberPlayers+1) //To keep the loop going within the bounds
+//         {
+//             x = 0;
+//         }
 
-    } 
-    return game;
-}
+//     } 
+//     return game;
+// }
 
-//TODO: NEED TO TEST AND VERIFY METHOD FUNCTIONALITY -Oliver
-GAMESTATE FLOP1(GAMESTATE game) {
-    //for loop for each of the players
-    for (int i=0; i<game.numberPlayers; i++){
-    int option = 0;
-    int raise = 0;
-    int min_bid = 0;
-    int x = 0;
+// //TODO: NEED TO TEST AND VERIFY METHOD FUNCTIONALITY -Oliver
+// GAMESTATE FLOP1(GAMESTATE game) {
+//     //for loop for each of the players
+//     for (int i=0; i<game.numberPlayers; i++){
+//     int option = 0;
+//     int raise = 0;
+//     int min_bid = 0;
+//     int x = 0;
 
-    //first step assign 3 cards to community deck.
-    for (int i=0; i<3; i++) {
-        game.communityCards.cards[game.communityCards.BOTTOM] = game.shuffleDeck.cards[game.shuffleDeck.BOTTOM];
-        game.communityCards.BOTTOM ++; //add a card to the community card
-        game.shuffleDeck.BOTTOM--; //take away a card from the shuffle deck.
-    }
+//     //first step assign 3 cards to community deck.
+//     for (int i=0; i<3; i++) {
+//         game.communityCards.cards[game.communityCards.BOTTOM] = game.shuffleDeck.cards[game.shuffleDeck.BOTTOM];
+//         game.communityCards.BOTTOM ++; //add a card to the community card
+//         game.shuffleDeck.BOTTOM--; //take away a card from the shuffle deck.
+//     }
 
-    //next step, I want to get all the options for calls.
-    int option;
-    printf("Player %d, choose 1  for call, 2 for raise, 3 for fold, 4 for check: ",x);
-    scanf("%d",&option);
-    switch (option) {
-            case 1 : //Calling the Bid
-                game.players[x].action = CALL;
-                game.players[x].Bid = min_bid;
-                break;
+//     //next step, I want to get all the options for calls.
+//     int option;
+//     printf("Player %d, choose 1  for call, 2 for raise, 3 for fold, 4 for check: ",x);
+//     scanf("%d",&option);
+//     switch (option) {
+//             case 1 : //Calling the Bid
+//                 game.players[x].action = CALL;
+//                 game.players[x].Bid = min_bid;
+//                 break;
 
-            case 2 : //Raising the bid
-                game.players[x].action = RAISE;
-                printf("Enter the raise amount: ");
-                scanf("%d",&raise);
-                min_bid = min_bid + raise;
-                game.players[x].Bid = min_bid;
-                break;
+//             case 2 : //Raising the bid
+//                 game.players[x].action = RAISE;
+//                 printf("Enter the raise amount: ");
+//                 scanf("%d",&raise);
+//                 min_bid = min_bid + raise;
+//                 game.players[x].Bid = min_bid;
+//                 break;
 
-            case 3: //Folding
-                game.players[x].action = FOLD;
-                break;
-            case 4: //check
-                game.players[x].action = CHECK;
-        }
-    }
-}
+//             case 3: //Folding
+//                 game.players[x].action = FOLD;
+//                 break;
+//             case 4: //check
+//                 game.players[x].action = CHECK;
+//         }
+//     }
+// }
 
 
 int EQUALBIDS(GAMESTATE game)

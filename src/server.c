@@ -1,4 +1,5 @@
 #include "deck.h"
+#include "game.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -25,8 +26,8 @@ int main(){
 
 	//initialize other game variables
 	game.shuffleDeck = ShuffleCards (deck);
+  game.GameCount = 0;
 	game.stage = PREFLOP;
-	game.playerTurn = 0;
 
 	while (true) {	
 		printf("Please enter the number of players: ");
@@ -39,11 +40,9 @@ int main(){
 	for (int i = 0; i < game.numberPlayers; i++) {
 		game.players[i].online = true;
 		game.players[i].Balance = STARTING_BALANCE;
-		if (i == 0) game.players[i].role = SMALLBLIND;
-		else if (i == 1) game.players[i].role = BIGBLIND;
 	}
 
-	
+  game = AssignCards(game);
 
 	//------------------------- EVENT LOOP (Done by GTK) ----------------------
 	while (true) {
@@ -57,23 +56,23 @@ int main(){
 
 		if (!strcmp(actStr, "fold") || !strcmp(actStr, "f")) {
 			game.players[game.playerTurn].action = FOLD;
-			game.players[game.playerTurn].action = FOLD;
 		}
 		if (!strcmp(actStr, "call") || !strcmp(actStr, "c")) {
 			game.players[game.playerTurn].action = CALL;
-			game.players[game.playerTurn].Bid = game.currCall; 
 		}
 		if (!strcmp(actStr, "check") || !strcmp(actStr, "ch")) {
 			game.players[game.playerTurn].action = CHECK;
-			game.players[game.playerTurn].Bid = game.currCall; 
 		}
 		if (!strcmp(actStr, "raise") || !strcmp(actStr, "r")) {
 			game.players[game.playerTurn].action = RAISE;
 			printf("\nRaise amount: ");
 			scanf("%d", &game.players[game.playerTurn].raiseAmt);
 		}
-		
+		int tempturn = game.playerTurn;
 		game = DoGame(game);
+    if(game.playerTurn==tempturn){
+      printf("Invalid Move!");
+    }
 	}
 
 	return 0;
@@ -83,17 +82,65 @@ int main(){
 
 //only called after player move, playerTurn will point to moving player
 GAMESTATE DoGame(GAMESTATE game) {
-  if(EQUALBIDS(game) == 0){
-    
+  //check player actions
+  int validmove = 1;
+  switch(game.players[game.playerTurn].action){
+    case CALL:
+      if(game.currCall != 0){
+        game.players[game.playerTurn].Bid = game.currCall;
+        game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
+        game.pot += game.currCall;
+      }else{
+        validmove = 0;
+      }
+    break;
+    case RAISE:
+      game.currCall += game.players[game.playerTurn].raiseAmt;
+      game.players[game.playerTurn].Bid = game.currCall;
+      game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
+      game.pot += game.currCall;
+    break;
+    case CHECK:
+      if(game.players[game.playerTurn].role == SMALLBLIND){
+        game.players[game.playerTurn].Bid = 0;
+        break;
+      }
+      int curr;
+      while (true) {
+        curr = game.playerTurn; 
+        if (curr-1 >= 0) curr--;
+        else (curr = game.numberPlayers);
+
+        if (game.players[curr].action == FOLD) break;
+      
+      }
+      if (game.players[curr].action == CHECK){
+        game.players[game.playerTurn].Bid = 0;
+      }else{
+        validmove = 0;
+      }
+    break;
+    default:
+    break;
+  }
+  if(!(game.players[game.playerTurn].role == SMALLBLIND && game.players[game.playerTurn].action == FOLD) && EQUALBIDS(game) == 1){
+    //stage change logic
+    if(game.stage != RIVER){
+      game.stage++;
+    }else{
+      //end game/restart
+    }
   }
 	//find next player's turn
-	while (true) {
-		if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
-		else (game.playerTurn = 0);
+  if(validmove == 1){
+    while (true) {
+      if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
+      else (game.playerTurn = 0);
 
-		if (game.players[game.playerTurn].action != FOLD) break;
-	}
-	return game;
+      if (game.players[game.playerTurn].action != FOLD) break;
+	  }
+  }
+  return game;
 }
 
 char *StageStr(STAGES s) {

@@ -16,10 +16,10 @@ typedef enum{ //Face cards are assigned value for assignment purposes
 }RANK;
 
 typedef enum{
- PREFLOP,
- FLOP,
- TURN,
- RIVER
+ PREFLOP = 0,
+ FLOP = 1,
+ TURN = 2,
+ RIVER = 3
 }STAGES;
 
 typedef enum{

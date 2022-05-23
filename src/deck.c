@@ -40,34 +40,34 @@ DECK ShuffleCards (DECK deck)
 
 GAMESTATE AssignCards (GAMESTATE game)
 {
+    //assign bottom 10 cards to players and increment the deck pointer
     int currentcard = 0;
     for (int i = 0; i <= game.numberPlayers; i++)
     {
         if(game.players[i].action != FOLD){
-            game.players[i].card1 = game.shuffleDeck.cards[x]; //Assign 1st Card to players
-            game.players[i].card2 = game.shuffleDeck.cards[x+1]; //Assign 2nd Card to players
-            x = x+2;
-            game.shuffleDeck.BOTTOM = x;
+            game.players[i].card1 = game.shuffleDeck.cards[currentcard]; //Assign 1st Card to players
+            game.players[i].card2 = game.shuffleDeck.cards[currentcard+1]; //Assign 2nd Card to players
+            currentcard = currentcard+2;
         }
     }
-    
+    game.shuffleDeck.BOTTOM = currentcard;
+    game.communityCards.BOTTOM = 0;
+
     for (int a = 0; a<= 4;a++)
     {
-        game.communityCards.cards[a] = game.shuffleDeck.cards[ game.shuffleDeck.BOTTOM + a];
-    }
-
-    for (int a = 0; a <= 4 ; a++) //Making P equal to players as a temporary variable
-    {
-        P[a] = game.players[a];
+        game.communityCards.cards[a] = game.shuffleDeck.cards[game.shuffleDeck.BOTTOM + a];
     }
     
     if (game.GameCount == 0)
     {
         game.players[0].role = 0; //Assigning small blind to game.players[0]
         game.players[0].Bid = 5; //Assigning default bid on small blind
+        game.players[0].Balance = game.players[0].Balance - 5;//they have lost their starting bid
         game.players[1].role = 1; //Assigning bigame blind to game.players[1]
         game.players[1].Bid = 10; //Assigning default bid on big blind
-        for (int a = 2; a <= 4 ; a++)
+        game.players[1].Balance = game.players[1].Balance - 10;//they have lost their starting bid
+        game.pot=15;
+        for (int a = 2; a < game.numberPlayers; a++)
         {
             game.players[a].role = 2; //Assigning other game.players ar normal players
             game.players[a].Bid = 0; //Assigning 0 bid for non-Blind players
@@ -76,19 +76,33 @@ GAMESTATE AssignCards (GAMESTATE game)
 
     else 
     {
-        for (int a = 0; a <= 4 ; a++) //Moving the players roles[Blinds] and assigning 
+        for (int a = 0; a <= game.numberPlayers ; a++) //Moving the players roles[Blinds] and assigning 
         {                             //default bids on binds, at the start of the round   
-            if (a > 0)
-            {
-                game.players[a].role = P[a-1].role;
-            }
-
-            else 
-            {
-                game.players[a].role = P[4].role;
+            if(game.players[a].role == SMALLBLIND){
+                game.players[a].role = NORMAL;
+                if(a+1<game.numberPlayers){
+                    game.players[a+1].role = SMALLBLIND; 
+                    game.players[a+1].Balance = game.players[a+1].Balance - 5; 
+                    if(a+2<game.numberPlayers){
+                        game.players[a+2].role = BIGBLIND; 
+                        game.players[a+2].Balance = game.players[a+2].Balance - 10; 
+                    }else{
+                        game.players[1].role = BIGBLIND;
+                        game.players[1].Balance = game.players[1].Balance - 10;
+                    }
+                }else{
+                    game.players[0].role = SMALLBLIND;
+                    game.players[0].Balance = game.players[0].Balance - 5; 
+                    game.players[1].role = BIGBLIND;
+                    game.players[1].Balance = game.players[1].Balance - 10; 
+                }
+                break;
             }
         }
+        game.pot=15;
     }
+    game.currCall = 10;
+    game.playerTurn = 2;
     return game;
 }
 
