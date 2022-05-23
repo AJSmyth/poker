@@ -58,6 +58,7 @@ int main(){
 		if (!strcmp(actStr, "fold") || !strcmp(actStr, "f")) {
 			game.players[game.playerTurn].action = FOLD;
 			game.players[game.playerTurn].action = FOLD;
+		}
 		if (!strcmp(actStr, "call") || !strcmp(actStr, "c")) {
 			game.players[game.playerTurn].action = CALL;
 			game.players[game.playerTurn].Bid = game.currCall; 

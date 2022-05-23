@@ -10,7 +10,6 @@ DECK INIT(){
         for(int r = 1; r <= 13; r++){
             deck.cards[count].suit = s;
             deck.cards[count].rank = r;
-            printf("%d %d\n" , deck.cards[count].suit, deck.cards[count].rank);
             count++;
             
 
