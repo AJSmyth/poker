@@ -59,6 +59,49 @@ GAMESTATE PREFLOP1(GAMESTATE game)
     return game;
 }
 
+//TODO: NEED TO TEST AND VERIFY METHOD FUNCTIONALITY -Oliver
+GAMESTATE FLOP(GAMESTATE game) {
+    //for loop for each of the players
+    for (int i=0; i<game.numberPlayers; i++){
+    int option = 0;
+    int raise = 0;
+    int min_bid = 0;
+    int x = 0;
+
+    //first step assign 3 cards to community deck.
+    for (int i=0; i<3; i++) {
+        game.communityCards.cards[game.communityCards.BOTTOM] = game.shuffleDeck.cards[game.shuffleDeck.BOTTOM];
+        game.communityCards.BOTTOM ++; //add a card to the community card
+        game.shuffleDeck.BOTTOM--; //take away a card from the shuffle deck.
+    }
+
+    //next step, I want to get all the options for calls.
+    int option;
+    printf("Player %d, choose 1  for call, 2 for raise, 3 for fold, 4 for check: ",x);
+    scanf("%d",&option);
+    switch (option) {
+            case 1 : //Calling the Bid
+                game.players[x].action = CALL;
+                game.players[x].Bid = min_bid;
+                break;
+
+            case 2 : //Raising the bid
+                game.players[x].action = RAISE;
+                printf("Enter the raise amount: ");
+                scanf("%d",&raise);
+                min_bid = min_bid + raise;
+                game.players[x].Bid = min_bid;
+                break;
+
+            case 3: //Folding
+                game.players[x].action = FOLD;
+                break;
+            case 4: //check
+                game.players[x].action = CHECK;
+        }
+    }
+}
+
 
 int EQUALBIDS(GAMESTATE game, int n)
 //This works only if player[0] did not fold (For now)
