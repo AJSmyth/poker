@@ -49,24 +49,27 @@ int BOTTOM;
 typedef struct{
 int Balance;
 int Bid;
+int raiseAmt;
 CARD card1;
 CARD card2;
 ACTIONS action;
 ROLE role;
+int ID;
+bool online;
 }PLAYER;
 
 typedef struct{
 STAGES stage;
-PLAYER players[5];
+PLAYER players[9];
+DECK shuffleDeck;
 DECK communityCards;
 int pot;
+int currCall;
 int numberPlayers;
-DECK shuffleDeck;
+int playerTurn;
 int GameCount;
 } GAMESTATE;
 
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
 GAMESTATE AssignCards (GAMESTATE G); //Assigns Cards and Blinds to players
-
-

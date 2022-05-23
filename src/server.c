@@ -1,52 +1,108 @@
 #include "deck.h"
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+const int STARTING_BALANCE = 500;
+const int SMALL_BLIND = 5;
+
+GAMESTATE DoGame(GAMESTATE game);
+char *StageStr(STAGES s);
 
 int main(){
-  DECK deck = INIT();
+	//------------------------ SETUP (Done by GTK) ------------------------------
+	DECK deck = INIT();
 
-  /*CARD c1 = {SPADES, 3};
-  CARD c2 = {HEARTS, 4};
-  PLAYER p1;
-  p1.card1 = c1;
-  p1.card2 = c2;
-  printf("%d %d", p1.card1.rank, p1.card2.suit);*/
+	//initialize static members of game
+	GAMESTATE game;
+	//fill the player array with empty, offline players
+	CARD nullCard = {-1,-1};
+	PLAYER emptyPlayer = {-1, -1, 0, nullCard, nullCard, NoAction, NORMAL, 0, false};
+	for (int i = 0; i < 9; i++) {
+		game.players[i] = emptyPlayer;
+		game.players[i].ID = i;
+	}
 
-  int n = 5; //Number of players
+	//initialize other game variables
+	game.shuffleDeck = ShuffleCards (deck);
+	game.stage = PREFLOP;
+	game.playerTurn = 0;
 
-  PLAYER player[n-1];
+	while (true) {	
+		printf("Please enter the number of players: ");
+		scanf("%d", &game.numberPlayers);
+		if (game.numberPlayers > 9) printf("\nPlease enter a number between 2 and 9");
+		else break;
+	}
+	
+	//set that many players to online
+	for (int i = 0; i < game.numberPlayers; i++) {
+		game.players[i].online = true;
+		game.players[i].Balance = STARTING_BALANCE;
+		if (i == 0) game.players[i].role = SMALLBLIND;
+		else if (i == 1) game.players[i].role = BIGBLIND;
+	}
 
-  GAMESTATE game;
-  game.shuffleDeck = ShuffleCards (deck);
-  //for(int a = 0; a<=51;a++)
-  //{
-  //printf("%d %d\n" , game.shuffleDeck.cards[a].suit, game.shuffleDeck.cards[a].rank);
-  //}
+	
 
-  game.GameCount = 0;
-  game.numberPlayers = 4;
+	//------------------------- EVENT LOOP (Done by GTK) ----------------------
+	while (true) {
+		printf("\n\nCurrent Stage: %s -- Pot: %d, Current Call: %d\n", StageStr(game.stage), game.pot, game.currCall);
 
-  for(int a = 0; a<=4;a++)
-  {
-    game.players[a].action = NoAction;
-  }
-
-  game.stage = PREFLOP;
-
-  game = AssignCards(game);
-  game = PREFLOP1 (game);
+		char actStr[6];
+		printf("\nPlayer %d, type an action: ", game.playerTurn + 1);
+		scanf("%5s", actStr);
+		for (int i = 0; i < 5; i++) actStr[i] = tolower(actStr[i]);
 
 
+		if (!strcmp(actStr, "fold") || !strcmp(actStr, "f")) {
+			game.players[game.playerTurn].action = FOLD;
+			game.players[game.playerTurn].action = FOLD;
+		if (!strcmp(actStr, "call") || !strcmp(actStr, "c")) {
+			game.players[game.playerTurn].action = CALL;
+			game.players[game.playerTurn].Bid = game.currCall; 
+		}
+		if (!strcmp(actStr, "check") || !strcmp(actStr, "ch")) {
+			game.players[game.playerTurn].action = CHECK;
+			game.players[game.playerTurn].Bid = game.currCall; 
+		}
+		if (!strcmp(actStr, "raise") || !strcmp(actStr, "r")) {
+			game.players[game.playerTurn].action = RAISE;
+			printf("\nRaise amount: ");
+			scanf("%d", &game.players[game.playerTurn].raiseAmt);
+		}
+		
+		game = DoGame(game);
+	}
 
-  for(int i = 0;i<=4;i++)
-  {
-    printf("%d Player suit is %d and rank is %d\n", i , game.players[i].card1.suit, game.players[i].card1.rank);
-    printf("%d Player suit is %d and rank is %d\n", i , game.players[i].card2.suit, game.players[i].card2.rank);
-    printf("%d Player Bet is %d\n", i , game.players[i].Bid);
-  }
-
-  for (int a = 0; a<= 2; a++)
-  {
-  printf("Card %d in Flop is: suit = %d and rank = %d\n", a+1, game.players[a].card1.suit, game.players[a].card1.rank);
-  }
-return 0;
+	return 0;
 }
+
+
+
+//only called after player move, playerTurn will point to moving player
+GAMESTATE DoGame(GAMESTATE game) {
+	//find next player's turn
+	while (true) {
+		if (game.playerTurn < 8) game.playerTurn++;
+		else (game.playerTurn = 0);
+
+		if (game.players[game.playerTurn].online) break;
+	}
+	return game;
+}
+
+char *StageStr(STAGES s) {
+	switch (s) {
+		case PREFLOP:
+		return "preflop";
+		case FLOP:
+		return "flop";
+		case TURN:
+		return "turn";
+		case RIVER:
+		return "river";
+		default:
+		return "undefined stage!";
+	}
+}	
