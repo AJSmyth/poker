@@ -65,7 +65,7 @@ GAMESTATE FLOP(GAMESTATE game) {
     for (int i=0; i<game.numberPlayers; i++){
     int option = 0;
     int raise = 0;
-    int min_bid = 10;
+    int min_bid = 0;
     int x = 0;
 
     //first step assign 3 cards to community deck.
