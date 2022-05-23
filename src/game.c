@@ -12,7 +12,7 @@ GAMESTATE PREFLOP1(GAMESTATE game)
 
     while (1)
     {
-        if(EQUALBIDS(game.players, game.numberPlayers) == 1) //Bidding goes on untill everyone has equal bids
+        if(EQUALBIDS(game) == 1) //Bidding goes on untill everyone has equal bids
         {
             break;
         }
@@ -103,37 +103,29 @@ GAMESTATE FLOP(GAMESTATE game) {
 }
 
 
-int EQUALBIDS(GAMESTATE game, int n)
+int EQUALBIDS(GAMESTATE game)
 //This works only if player[0] did not fold (For now)
 {
-    if (game.players[n].action != FOLD) 
-    {
-        for(int a = 1; a <= n ; a++)
-        {
-            if (game.players[n].action == FOLD) //Not considering the bid of a folded player
-                {
-                   continue;
-                }
-
-            if (game.players[a].Bid == game.players[a].Bid) //Checking if all bids are equal
-                {
-                if (a == n)
-                    {
-                       return 1; //Returning 1 if all bids are equal
-                    }
-
-                else
-                    {
-                        continue;
-                    }
-                }
-
-            else
-            {
-                return 0; //Returning 0 if even one of the bids are not equal
+    int currentBid;
+    int firstPlayer;
+    //find the first player in play and record their bid and index
+    for(int i = 0; i < game.numberPlayers; i++){
+        if(game.players[game.playerTurn].action != FOLD){
+            currentBid = game.players[i].bid;
+            firstPlayer = i;
+            break;
+        }
+    }
+    //check every player after the first active player to see if their bids are equal to the first
+    for(int i = firstPlayer+1; i < game.numberPlayers; i++){
+        if(game.players[game.playerTurn].action != FOLD){
+            if(game.players[i].bid != currentBid){
+                return 0;
             }
         }
     }
+
+    return 1;
 }
 
 

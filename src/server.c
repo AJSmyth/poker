@@ -83,12 +83,15 @@ int main(){
 
 //only called after player move, playerTurn will point to moving player
 GAMESTATE DoGame(GAMESTATE game) {
+  if(EQUALBIDS(game) == 0){
+    
+  }
 	//find next player's turn
 	while (true) {
-		if (game.playerTurn < 8) game.playerTurn++;
+		if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
 		else (game.playerTurn = 0);
 
-		if (game.players[game.playerTurn].online) break;
+		if (game.players[game.playerTurn].action != FOLD) break;
 	}
 	return game;
 }

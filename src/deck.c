@@ -40,23 +40,20 @@ DECK ShuffleCards (DECK deck)
 
 GAMESTATE AssignCards (GAMESTATE game)
 {
-    int i,x;
-    PLAYER P[5]; //Temporary variable
-
-    for (i = 0, x = 0; i <= 4; i++, x=x+2)
+    int currentcard = 0;
+    for (int i = 0; i <= game.numberPlayers; i++)
     {
-        game.players[i].card1 = game.shuffleDeck.cards[x]; //Assign 1st Card to players
-        game.players[i].card2 = game.shuffleDeck.cards[x+1]; //Assign 2nd Card to players
-    }
-
-    for(int a = 0; a<= 51 - 10;a++)
-    {
-        game.shuffleDeck.cards[a] = game.shuffleDeck.cards[a+10]; //Change the deck by removing the assiged cards
+        if(game.players[i].action != FOLD){
+            game.players[i].card1 = game.shuffleDeck.cards[x]; //Assign 1st Card to players
+            game.players[i].card2 = game.shuffleDeck.cards[x+1]; //Assign 2nd Card to players
+            x = x+2;
+            game.shuffleDeck.BOTTOM = x;
+        }
     }
     
     for (int a = 0; a<= 4;a++)
     {
-        game.communityCards.cards[a] = game.shuffleDeck.cards[a];
+        game.communityCards.cards[a] = game.shuffleDeck.cards[ game.shuffleDeck.BOTTOM + a];
     }
 
     for (int a = 0; a <= 4 ; a++) //Making P equal to players as a temporary variable
