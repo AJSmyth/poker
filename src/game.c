@@ -106,7 +106,7 @@ int EQUALBIDS(GAMESTATE game)
     //find the first player in play and record their bid and index
     for(int i = 0; i < game.numberPlayers; i++){
         if(game.players[game.playerTurn].action != FOLD){
-            currentBid = game.players[i].bid;
+            currentBid = game.players[i].Bid;
             firstPlayer = i;
             break;
         }
@@ -114,7 +114,7 @@ int EQUALBIDS(GAMESTATE game)
     //check every player after the first active player to see if their bids are equal to the first
     for(int i = firstPlayer+1; i < game.numberPlayers; i++){
         if(game.players[game.playerTurn].action != FOLD){
-            if(game.players[i].bid != currentBid){
+            if(game.players[i].Bid != currentBid){
                 return 0;
             }
         }

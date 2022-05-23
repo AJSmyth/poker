@@ -60,16 +60,16 @@ GAMESTATE AssignCards (GAMESTATE game)
     
     if (game.GameCount == 0)
     {
-        game.players[0].role = 0; //Assigning small blind to game.players[0]
+        game.players[0].role = SMALLBLIND; //Assigning small blind to game.players[0]
         game.players[0].Bid = 5; //Assigning default bid on small blind
         game.players[0].Balance = game.players[0].Balance - 5;//they have lost their starting bid
-        game.players[1].role = 1; //Assigning bigame blind to game.players[1]
-        game.players[1].Bid = 10; //Assigning default bid on big blind
+        game.players[1].role = BIGBLIND; //Assigning bigame blind to game.players[1]
+        game.players[1].Bid = 0; //Assigning default bid on big blind
         game.players[1].Balance = game.players[1].Balance - 10;//they have lost their starting bid
         game.pot=15;
         for (int a = 2; a < game.numberPlayers; a++)
         {
-            game.players[a].role = 2; //Assigning other game.players ar normal players
+            game.players[a].role = NORMAL; //Assigning other game.players ar normal players
             game.players[a].Bid = 0; //Assigning 0 bid for non-Blind players
         }
     }

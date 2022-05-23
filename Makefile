@@ -1,5 +1,5 @@
 main0: 
-	gcc -std=c11 src/server.c src/deck.c -o bin/poker
+	gcc -std=c11 src/server.c src/game.c src/deck.c -o bin/poker
 
 tar:
 	tar -zcvf rename_later.tar.gz ./README ./COPYRIGHT ./INSTALL ./bin ./doc/Poker_UserManual.pdf
