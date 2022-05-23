@@ -171,6 +171,9 @@ GAMESTATE DoGame(GAMESTATE game) {
       game.currCall = 0;
       game.stage++;
     }else{
+      PLAYER P;
+      P = Sequence_Winner(game); 
+      printf("Winner is Player %d\n", P.ID);
       printf("Game over");
       game.stage = WIN;
       //end game/restart
