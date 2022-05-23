@@ -60,7 +60,7 @@ GAMESTATE PREFLOP1(GAMESTATE game)
 }
 
 //TODO: NEED TO TEST AND VERIFY METHOD FUNCTIONALITY -Oliver
-GAMESTATE FLOP(GAMESTATE game) {
+GAMESTATE FLOP1(GAMESTATE game) {
     //for loop for each of the players
     for (int i=0; i<game.numberPlayers; i++){
     int option = 0;
