@@ -1,3 +1,5 @@
+#ifndef GAME_H
+#define GAME_H
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -74,3 +76,4 @@ int GameCount;
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
 GAMESTATE AssignCards (GAMESTATE G); //Assigns Cards and Blinds to players
+#endif
