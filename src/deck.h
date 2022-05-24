@@ -1,5 +1,8 @@
+#ifndef GAME_H
+#define GAME_H
 #include <stdlib.h>
 #include <stdbool.h>
+
 
 typedef enum{ // 4 suits in a deck of cards
  SPADES = 0,
@@ -9,7 +12,7 @@ typedef enum{ // 4 suits in a deck of cards
 }SUIT;
 
 typedef enum{ //Face cards are assigned value for assignment purposes
- ACE = 1,
+ ACE = 14,
  JACK = 11,
  QUEEN = 12,
  KING = 13
@@ -74,3 +77,5 @@ int GameCount;
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
 GAMESTATE AssignCards (GAMESTATE G); //Assigns Cards and Blinds to players
+
+#endif

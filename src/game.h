@@ -1,3 +1,6 @@
+
+#ifndef GAME_H
+#define GAME_H
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -17,6 +20,7 @@ int IsStraight (GAMESTATE game, int PlayerNumber);
 int IsThreeofaKind (GAMESTATE game, int PlayerNumber);
 int IsTwoPair (GAMESTATE game, int PlayerNumber);
 int IsOnePair (GAMESTATE game, int PlayerNumber);
+int IsHighCard(GAMESTATE game, int PlayerNumber);
 
 int LargestinArray (int A[], int B);
 DECK SortbyRank(DECK D);
@@ -24,3 +28,5 @@ DECK SortbySuit (DECK D);
 
 void swap(int *a, int *b);
 void random(int arr[], int n);
+
+#endif

@@ -95,47 +95,47 @@ int CheckPlayer (GAMESTATE game, int PlayerNumber)
 
     if (IsStraightFlush(game,PlayerNumber) == 1)
     {
-        priority = 9;
+        priority = 22;
     }
 
     else if (IsFourofaKind (game,PlayerNumber) == 1)
     {
-        priority = 8;
+        priority = 21;
     }
 
     else if (IsFullHouse(game,PlayerNumber) == 1)
     {
-        priority = 7;
+        priority = 20;
     }
     
     else if (IsFlush (game,PlayerNumber) == 1)
     {
-        priority = 6;
+        priority = 19;
     }
 
     else if (IsStraight (game,PlayerNumber) == 1)
     {
-        priority = 5;
+        priority = 18;
     }
 
     else if (IsThreeofaKind (game,PlayerNumber) == 1)
     {
-        priority = 4;
+        priority = 17;
     }
 
     else if (IsTwoPair (game,PlayerNumber) ==1)
     {
-        priority = 3;
+        priority = 16;
     }
 
     else if (IsOnePair (game,PlayerNumber) ==1)
     {
-        priority = 2;
+        priority = 15;
     }
 
     else //Implement High Card here
     {
-        priority = 1;
+        priority = IsHighCard(game, PlayerNumber);
     }
 
     return priority;
@@ -198,7 +198,7 @@ int IsFourofaKind (GAMESTATE game, int PlayerNumber)
 
 int IsFullHouse(GAMESTATE game, int PlayerNumber) // Change ?
 {
-    if (IsThreeofaKind(game, PlayerNumber) == 1 && IsOnePair(game, PlayerNumber) == 1)
+    if (IsThreeofaKind(game, PlayerNumber) == 1 && IsTwoPair(game, PlayerNumber) == 1)
     {
         return 1;
     }
@@ -361,6 +361,70 @@ int IsOnePair (GAMESTATE game, int PlayerNumber)
     {
         return 0;
     }
+}
+
+int IsHighCard(GAMESTATE game, int PlayerNumber){
+    DECK NewDeck;
+
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbyRank(NewDeck);
+
+    a = NewDeck.cards[0].rank;
+    b = NewDeck.cards[1].rank;
+    c = NewDeck.cards[2].rank;
+    d = NewDeck.cards[3].rank;
+    e = NewDeck.cards[4].rank;
+    f = NewDeck.cards[5].rank;
+    g = NewDeck.cards[6].rank;
+    
+    if(NewDeck.cards[6].rank == 14){
+        return 14;
+    }
+    if(NewDeck.cards[6].rank == 13){
+        return 13;
+    }
+    if(NewDeck.cards[6].rank == 12){
+        return 12;
+    }
+    if(NewDeck.cards[6].rank == 11){
+        return 11;
+    }
+    if(NewDeck.cards[6].rank == 10){
+        return 10;
+    }
+    if(NewDeck.cards[6].rank == 9){
+        return 9;
+    }
+    if(NewDeck.cards[6].rank == 8){
+        return 8;
+    }
+    if(NewDeck.cards[6].rank == 7){
+        return 7;
+    }
+    if(NewDeck.cards[6].rank == 6){
+        return 6;
+    }
+    if(NewDeck.cards[6].rank == 5){
+        return 5;
+    }
+    if(NewDeck.cards[6].rank == 4){
+        return 4;
+    }
+    if(NewDeck.cards[6].rank == 3){
+        return 3;
+    }
+    if(NewDeck.cards[6].rank == 2){
+        return 2;
+    }
+
+
 }
 
 DECK SortbyRank(DECK D)
