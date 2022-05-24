@@ -20,6 +20,7 @@ int IsOnePair (GAMESTATE game, int PlayerNumber);
 
 int LargestinArray (int A, int B);
 DECK SortbyRank(DECK D);
+DECK SortbySuit (DECK D);
 
 void swap(int *a, int *b);
 void random(int arr[], int n);
