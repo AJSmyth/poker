@@ -7,7 +7,7 @@ DECK INIT(){
     DECK deck;
     int count = 0;
     for(SUIT s = 0; s <= 3; s++){
-        for(int r = 1; r <= 13; r++){
+        for(int r = 2; r <= 14; r++){
             deck.cards[count].suit = s;
             deck.cards[count].rank = r;
             count++;
