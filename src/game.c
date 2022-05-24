@@ -1,58 +1,9 @@
 #include "deck.h"
+#include "game.h"
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
 
-// GAMESTATE PREFLOP1(GAMESTATE game)
-// {
-//     int option = 0;
-//     int raise = 0;
-//     int min_bid = 10;
-//     int x = 0;
-
-//     while (EQUALBIDS(game) == 0)
-//     {
-//         if (game.players[x].action == FOLD) //If a player folded, we do not ask his input again
-//         {
-//             x++;
-//             if(x == game.numberPlayers+1)
-//             {
-//                 x = 0;
-//             }
-//             continue;
-//         }
-
-//         printf("Player %d, choose 1  for call, 2 for raise, 3 for fold: ",x);
-//         scanf("%d",&option);
-
-//         switch (option)
-//         {
-//             case 1 : //Calling the Bid
-//                 game.players[x].action = CALL;
-//                 game.players[x].Bid = min_bid;
-//                 break;
-
-//             case 2 : //Raising the bid
-//                 game.players[x].action = RAISE;
-//                 printf("Enter the raise amount: ");
-//                 scanf("%d",&raise);
-//                 min_bid = min_bid + raise;
-//                 game.players[x].Bid = min_bid;
-//                 break;
-
-//             case 3: //Folding
-//                 game.players[x].action = FOLD;
-//                 break;
-//         }
-//         x++;
-//         if(x == game.numberPlayers+1) //To keep the loop going within the bounds
-//         {
-//             x = 0;
-//         }
-
-//     } 
-//     return game;
-// }
 
 // //TODO: NEED TO TEST AND VERIFY METHOD FUNCTIONALITY -Oliver
 // GAMESTATE FLOP1(GAMESTATE game) {
@@ -123,92 +74,26 @@ int EQUALBIDS(GAMESTATE game)
     return 1;
 }
 
-
-
-void swap(int *a, int *b) {
-    int X = *a;
-    *a = *b;
-    *b = X;
-}
-
-
-DECK SortbyRank(DECK D)
+PLAYER Sequence_Winner (GAMESTATE game)
 {
-    CARD X;
-    int i, j;
-    for(i=0;i<7;i++)
+    int A[9], i;
+    for (i = 0; i < game.numberPlayers; i++)
     {
-        for (j=0 ; j<7-i-1; j++)
+        if(game.players[i].action != FOLD)
         {
-            if(D.cards[j].rank > D.cards[j+1].rank)
-            {
-                X = D.cards[j];
-                D.cards[j] = D.cards[j+1];
-                D.cards[j+1] = X;
-            }
+            A[i] = CheckPlayer(game, i); //Assign a Value to A[i] with i = PlayerNumber
         }
-        
     }
-    for (int i=0;i<7;i++)
-    {
-        printf("Card %d Rank = %d\n", i, D.cards[i].rank);
-    }
-    return D;
+    int Winner = LargestinArray (A, i); //Winner is the player with the highest number from CheckPlayer()
+
+    return game.players[Winner];
 }
-
-int IsRoyalFlush (GAMESTATE game, int PlayerNumber)
-{return 0;}
-int IsStraightFlush(GAMESTATE game, int PlayerNumber){return 0;}
-int IsFourofaKind (GAMESTATE game, int PlayerNumber){return 0;}
-int IsFullHouse(GAMESTATE game, int PlayerNumber){return 0;}
-int IsStraight (GAMESTATE game, int PlayerNumber){return 0;}
-int IsThreeofaKind (GAMESTATE game, int PlayerNumber){return 0;}
-int IsTwoPair (GAMESTATE game, int PlayerNumber){return 0;}
-int IsOnePair (GAMESTATE game, int PlayerNumber){return 0;}
-
-int IsFlush(GAMESTATE game, int PlayerNumber)
-{
-    DECK NewDeck;
-    int i, a, b, c, d, e, f, g;
-    for (i = 0; i< 5; i++)
-    {
-        NewDeck.cards[i] = game.communityCards.cards[i];
-    }
-    NewDeck.cards[5] = game.players[PlayerNumber].card1;
-
-    NewDeck.cards[6] = game.players[PlayerNumber].card2;
-
-    NewDeck = SortbyRank(NewDeck);
-
-    a = NewDeck.cards[0].rank;
-    b = NewDeck.cards[1].rank;
-    c = NewDeck.cards[2].rank;
-    d = NewDeck.cards[3].rank;
-    e = NewDeck.cards[4].rank;
-    f = NewDeck.cards[5].rank;
-    g = NewDeck.cards[6].rank;
-
-    if ((e == d+1 && d == c+1 && c == b+1 && b == a+1) || (f == e+1 && e == d+1 && d == c+1 && c == b+1) || (g == f+1 && f == e+1 && e == d+1 && d == c+1))
-    {
-        return 1;
-    }
-    else 
-    {
-        return 0;
-    }
-    return 0;
-} 
 
 int CheckPlayer (GAMESTATE game, int PlayerNumber)
-{
+{ //The better the card sequence, the higher is the priority number returned.
     int priority;
 
-    if (IsRoyalFlush(game,PlayerNumber) == 1)
-    {
-        priority = 10;
-    }
-    
-    else if (IsStraightFlush(game,PlayerNumber) == 1)
+    if (IsStraightFlush(game,PlayerNumber) == 1)
     {
         priority = 9;
     }
@@ -248,7 +133,7 @@ int CheckPlayer (GAMESTATE game, int PlayerNumber)
         priority = 2;
     }
 
-    else 
+    else //Implement High Card here
     {
         priority = 1;
     }
@@ -256,36 +141,282 @@ int CheckPlayer (GAMESTATE game, int PlayerNumber)
     return priority;
 }
 
+int IsRoyalFlush (GAMESTATE game, int PlayerNumber) //Change
+{
+    if (IsFlush(game, PlayerNumber) == 1 && IsStraight(game, PlayerNumber) == 1)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int IsStraightFlush(GAMESTATE game, int PlayerNumber)
+{
+    if (IsFlush(game, PlayerNumber) == 1 && IsStraight(game, PlayerNumber) == 1)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+    
+int IsFourofaKind (GAMESTATE game, int PlayerNumber)
+{
+    DECK NewDeck;
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbyRank(NewDeck);
+
+    a = NewDeck.cards[0].rank;
+    b = NewDeck.cards[1].rank;
+    c = NewDeck.cards[2].rank;
+    d = NewDeck.cards[3].rank;
+    e = NewDeck.cards[4].rank;
+    f = NewDeck.cards[5].rank;
+    g = NewDeck.cards[6].rank;
+
+    if ((a == b && b == c && c == d) || (b == c && c == d && d == e) || (c == d && d == e && e == f) || (d == e && e == f && f == g))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int IsFullHouse(GAMESTATE game, int PlayerNumber) // Change ?
+{
+    if (IsThreeofaKind(game, PlayerNumber) == 1 && IsOnePair(game, PlayerNumber) == 1)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int IsFlush(GAMESTATE game, int PlayerNumber)
+{
+    DECK NewDeck;
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbySuit(NewDeck);
+
+    a = NewDeck.cards[0].suit;
+    b = NewDeck.cards[1].suit;
+    c = NewDeck.cards[2].suit;
+    d = NewDeck.cards[3].suit;
+    e = NewDeck.cards[4].suit;
+    f = NewDeck.cards[5].suit;
+    g = NewDeck.cards[6].suit;
+
+    if ((a == b && b == c && c == d && d == e) || (b == c && c == d && d == e && e == f) || (c == d && d == e && e == f && f == g))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+} 
+
+int IsStraight (GAMESTATE game, int PlayerNumber)
+{
+    DECK NewDeck;
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbyRank(NewDeck);
+
+    a = NewDeck.cards[0].rank;
+    b = NewDeck.cards[1].rank;
+    c = NewDeck.cards[2].rank;
+    d = NewDeck.cards[3].rank;
+    e = NewDeck.cards[4].rank;
+    f = NewDeck.cards[5].rank;
+    g = NewDeck.cards[6].rank;
+
+    if ((e == d+1 && d == c+1 && c == b+1 && b == a+1) || (f == e+1 && e == d+1 && d == c+1 && c == b+1) || (g == f+1 && f == e+1 && e == d+1 && d == c+1))
+    {
+        return 1;
+    }
+    else 
+    {
+        return 0;
+    }
+}
+
+int IsThreeofaKind (GAMESTATE game, int PlayerNumber)
+{
+    DECK NewDeck;
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbyRank(NewDeck);
+
+    a = NewDeck.cards[0].rank;
+    b = NewDeck.cards[1].rank;
+    c = NewDeck.cards[2].rank;
+    d = NewDeck.cards[3].rank;
+    e = NewDeck.cards[4].rank;
+    f = NewDeck.cards[5].rank;
+    g = NewDeck.cards[6].rank;
+
+    if ((a == b && b == c) || (b == c && c == d) || (c == d && d == e) || (d == e && e == f) || (e == f && f == g))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+int IsTwoPair (GAMESTATE game, int PlayerNumber)
+{
+    DECK NewDeck;
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbyRank(NewDeck);
+
+    a = NewDeck.cards[0].rank;
+    b = NewDeck.cards[1].rank;
+    c = NewDeck.cards[2].rank;
+    d = NewDeck.cards[3].rank;
+    e = NewDeck.cards[4].rank;
+    f = NewDeck.cards[5].rank;
+    g = NewDeck.cards[6].rank;
+
+    if ((a == b && (c == d || d == e || e == f || f == g))  || (b == c && (d == e || e == f || f == g)) || (c == d && (e == f || f == g)) || (d == e && (f == g)))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int IsOnePair (GAMESTATE game, int PlayerNumber)
+{
+    DECK NewDeck;
+    int i, a, b, c, d, e, f, g;
+    for (i = 0; i< 5; i++)
+    {
+        NewDeck.cards[i] = game.communityCards.cards[i];
+    }
+    NewDeck.cards[5] = game.players[PlayerNumber].card1;
+    NewDeck.cards[6] = game.players[PlayerNumber].card2;
+
+    NewDeck = SortbyRank(NewDeck);
+
+    a = NewDeck.cards[0].rank;
+    b = NewDeck.cards[1].rank;
+    c = NewDeck.cards[2].rank;
+    d = NewDeck.cards[3].rank;
+    e = NewDeck.cards[4].rank;
+    f = NewDeck.cards[5].rank;
+    g = NewDeck.cards[6].rank;
+
+    if ((a == b) || (b == c) || (c == d) || (d == e) || (e == f) || (f == g))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+DECK SortbyRank(DECK D)
+{
+    CARD X;
+    int i, j;
+    for(i=0;i<7;i++)
+    {
+        for (j=0 ; j<7-i-1; j++)
+        {
+            if(D.cards[j].rank > D.cards[j+1].rank)
+            {
+                X = D.cards[j];
+                D.cards[j] = D.cards[j+1];
+                D.cards[j+1] = X;
+            }
+        }
+        
+    }
+    return D;
+}
+
+DECK SortbySuit (DECK D)
+{
+    CARD X;
+    int i, j;
+    for(i=0;i<7;i++)
+    {
+        for (j=0 ; j<7-i-1; j++)
+        {
+            if(D.cards[j].suit > D.cards[j+1].suit)
+            {
+                X = D.cards[j];
+                D.cards[j] = D.cards[j+1];
+                D.cards[j+1] = X;
+            }
+        }
+    }
+    return D;
+}
+
 int LargestinArray (int A[], int B)
 {
     int i;
     int max = 1;
+    int a;
  
     for (i = 0; i < B; i++)
         if (A[i] > max)
         {
-            max = i;
+            max = A[i];
+            a = i;
         }
             
-    return max;
+    return a;
 }
-
-PLAYER Sequence_Winner (GAMESTATE game)
-{
-    int A[9], i;
-    for (i = 0; i < game.numberPlayers; i++)
-    {
-        //if(game.players[i].action != FOLD)
-        {
-            A[i] = CheckPlayer(game, i);
-        }
-    }
-    int Winner = LargestinArray (A, i);
-
-    return game.players[Winner];
-}
-
-
 
 void random(int A[], int B) {
     srand(time(NULL));
@@ -296,3 +427,9 @@ void random(int A[], int B) {
     }
 }
 
+void swap(int *a, int *b) {
+    int X = *a;
+    *a = *b;
+    *b = X;
+}
+    
