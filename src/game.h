@@ -1,4 +1,3 @@
-
 #ifndef GAME_H
 #define GAME_H
 #include <stdlib.h>
@@ -28,5 +27,4 @@ DECK SortbySuit (DECK D);
 
 void swap(int *a, int *b);
 void random(int arr[], int n);
-
 #endif

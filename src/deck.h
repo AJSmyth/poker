@@ -77,5 +77,4 @@ int GameCount;
 DECK INIT();
 DECK ShuffleCards (DECK deck); //Shuffles the deck 
 GAMESTATE AssignCards (GAMESTATE G); //Assigns Cards and Blinds to players
-
 #endif
