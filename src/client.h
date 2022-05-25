@@ -15,14 +15,19 @@ typedef struct {
 typedef struct {
 	GtkWidget *vbox;
 	GtkWidget *mainLabel;
+	GtkWidget *commLabel;
+	GtkWidget *cardLabel;
+	GtkWidget *playerLabel;
+	GtkWidget *raiseBtn;
+	GtkWidget *playerBtn;
 } GameObjects;
 
 typedef struct {
 	EGameState state;
 	MenuObjects menu;
 	GameObjects game;
+	GAMESTATE gs;
 
-	PLAYER player;
+	int ID;
 } Game;
-
 #endif

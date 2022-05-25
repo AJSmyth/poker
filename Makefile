@@ -4,4 +4,4 @@ LIBS = `pkg-config --libs gtk+-2.0`
 DESTDIR = bin
 
 main:
-	gcc src/client.c -o bin/poker $(CFLAGS) $(LIBS)
+	gcc src/client.c src/deck.c src/game.c -o bin/poker $(CFLAGS) $(LIBS)
