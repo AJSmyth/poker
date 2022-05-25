@@ -27,4 +27,5 @@ DECK SortbySuit (DECK D);
 
 void swap(int *a, int *b);
 void random(int arr[], int n);
+int nUnfolded(GAMESTATE game);
 #endif
