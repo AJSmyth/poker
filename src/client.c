@@ -162,12 +162,28 @@ GAMESTATE DoGame(GAMESTATE game) {
   }
 
   //stage change logic
-  if(!(game.players[game.playerTurn].role == SMALLBLIND && game.players[game.playerTurn].action == FOLD) && EQUALBIDS(game) == 1 && validmove == 1){
+  if(EQUALBIDS(game) == 1 && validmove == 1){
     if(game.stage != RIVER){
       //set all bets to -1 to avoid premature progression
       for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
 
-      game.playerTurn = 0;
+      //find first player after smallblind
+      bool foundSB = false;
+      for (int i = 0; i < game.numberPlayers; i++) {
+	      //if haven't found small blind, continue searching
+	      if (!foundSB) foundSB = (game.players[i].role == SMALLBLIND);
+
+	      //if small blind or closest unfolded player to sb, make it their turn
+	      if (foundSB && game.players[i].action != FOLD) {
+		      game.playerTurn = i;
+		      printf("Player %d turnasdfasdfasd", i);
+		      break;
+	      }
+
+	      //if the smallblind is the last player and is folded
+	      if (game.players[i].role == SMALLBLIND && game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
+      }		
+      
       game.currCall = 0;
       game.stage++;
     }else{
