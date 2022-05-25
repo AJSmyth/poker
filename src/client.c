@@ -291,26 +291,21 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data) {
     cairo_move_to (cr, 40, 60);
     cairo_set_source_rgb (cr, 0,0,0);
     cairo_show_text (cr, "Queen's Poker");
-    cairo_restore (cr);
 
-    // cairo_set_source_rgb (cr, 0,0,1);
-    cairo_move_to (cr, 40, 70);
-    for (i=0; i< width/10; i++)
-    {
-    cairo_rel_line_to (cr, 5,  10);
-    cairo_rel_line_to (cr, 5, -10);
-    }
-    cairo_stroke (cr);
+	cairo_move_to (cr, width/4, height/2);
 
-    cairo_move_to (cr, 0, 70);
-    for (i=0; i< 5; i++)
+    cairo_set_source_rgb (cr, 0,0,0);
+    
+	for (i=1; i<= 5; i++)
     {
         cairo_set_source_rgb (cr, 0,0,0);
-        cairo_line_to (cr, 0.5, 0);
-        cairo_rel_line_to (cr, 0.25, -1);
-        cairo_rel_line_to (cr, 0.25, -1);
-        cairo_rel_line_to (cr, 0.25, -1);
+        cairo_line_to (cr, (width/4) + i*40, height/2);
+		cairo_rel_line_to(cr, 0, 50);
+		cairo_rel_line_to(cr, (width/4) - i*40, 0);
+		cairo_close_path (cr);
+
     }
+	
     cairo_stroke (cr);
 
     cairo_destroy (cr);
