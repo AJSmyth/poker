@@ -1,5 +1,5 @@
-#ifndef GAME_H
-#define GAME_H
+#ifndef DECK_H
+#define DECK_H
 #include <stdlib.h>
 #include <stdbool.h>
 
