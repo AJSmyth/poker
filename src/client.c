@@ -21,6 +21,7 @@ int player_net_id;
 int main(){
 	//initialize connection
 	int sock;
+	int WINNER;
 	struct sockaddr_in server;
 	
 	//Create socket
@@ -140,10 +141,23 @@ int main(){
 			printf("\nInvalid Move!");
 		}
 	}
-      PLAYER P;
-      P = Sequence_Winner(game); 
-      printf("Winner is Player %d\n", P.ID + 1);
-      printf("Game over");
+        WINNER = Sequence_Winner(game); 
+	
+	if (game.SplitPot == 1)
+	{
+	  printf("Pot is split between Player %d and Player %d!\n",game.SplitPotPlayers[0],game.SplitPotPlayers[1]);
+	  printf("Game over\n");
+	  game.players[game.SplitPotPlayers[0]].Balance =+ game.pot / 2;
+	  game.players[game.SplitPotPlayers[1]].Balance =+ game.pot / 2;
+	  game.SplitPot = 0;
+	}
+	else
+	{
+	  game.players[Winner].Balance = game.players[Winner].Balance + game.pot;
+	  printf("Winner is Player %d\n", game.players[Winner].ID);
+	  printf("Game over\n");
+	}
+	
 	return 0;
 }
 
