@@ -72,6 +72,8 @@ int currCall;
 int numberPlayers;
 int playerTurn;
 int GameCount;
+int SplitPotPlayers[9];
+int SplitPot;
 } GAMESTATE;
 
 DECK INIT();
