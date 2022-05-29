@@ -4,7 +4,8 @@
 #include<arpa/inet.h>	//inet_addr
 #include<unistd.h>	//write
 #include <pthread.h>
-//#include "game.h"
+#include "deck.h"
+#include "game.h"
 
 const int player_count = 9;
 

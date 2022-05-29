@@ -1,5 +1,6 @@
 test: 
 	gcc -std=c11 src/client.c src/game.c src/deck.c -o bin/poker
+	gcc -std=c11 -pthread src/server.c src/game.c src/deck.c -o bin/server
 clean:
 	rm bin/poker
 
