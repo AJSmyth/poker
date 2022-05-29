@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+//socket stuff
+#include <sys/socket.h>	//socket
+#include <arpa/inet.h>	//inet_addr
+#include <unistd.h>
 
 const int STARTING_BALANCE = 500;
 const int SMALL_BLIND = 5;
@@ -12,7 +16,40 @@ char *StageStr(STAGES s);
 char *SuitStr(SUIT s);
 char *RankStr(RANK r);
 
+int player_net_id;
+
 int main(){
+	//initialize connection
+	int sock;
+	struct sockaddr_in server;
+	
+	//Create socket
+	sock = socket(AF_INET , SOCK_STREAM , 0);
+	if (sock == -1)
+	{
+		printf("Could not create socket");
+	}
+	
+	server.sin_addr.s_addr = inet_addr("127.0.0.1");//currently on local host for testing purposes
+	server.sin_family = AF_INET;
+	server.sin_port = htons( 9001 );
+
+	//Connect to remote server
+	if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+	{
+		perror("connect failed. Error");
+		return 1;
+	}
+	
+	printf("Connected to game server.\n");
+	if(read(sock , &player_net_id , sizeof(player_net_id)) < 0){
+		printf("Unable to retrieve player net ID.");
+	}
+	// if((player_net_id = (int) recv(sock , server_reply , sizeof(int) , 0)) < 0){
+	// 	printf("Unable to retrieve player net ID.");
+	// 	return 1;
+	// }
+	printf("Player ID: %d: ", player_net_id);
 	//------------------------ SETUP (Done by GTK) ------------------------------
 	DECK deck = INIT();
 
@@ -28,7 +65,7 @@ int main(){
 
 	//initialize other game variables
 	game.shuffleDeck = ShuffleCards (deck);
-  game.GameCount = 0;
+  	game.GameCount = 0;
 	game.stage = PREFLOP;
 
 	printf("\n.------..------..------..------..------..------..------.     .------..------..------..------..------.\n");
