@@ -7,8 +7,9 @@ GAMESTATE PREFLOP1(GAMESTATE game); //Bidding in PreFlop
 GAMESTATE FLOP1(GAMESTATE game);
 int EQUALBIDS(GAMESTATE game); //Checking if all bids are equal to proceed further
 
-PLAYER Sequence_Winner (GAMESTATE game);
+int Sequence_Winner (GAMESTATE game);
 int CheckPlayer (GAMESTATE game, int PlayerNumber);
+int TieBreaker (int i,int j, int Priority, GAMESTATE game);
 
 int IsRoyalFlush (GAMESTATE game, int PlayerNumber);
 int IsStraightFlush(GAMESTATE game, int PlayerNumber);
