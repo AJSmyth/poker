@@ -119,12 +119,12 @@ void *connection_handler(void *socket_desc)
 	}
 
 	//echo game state to all other players
-	if(local_id != 0){
-		sprintf(out, "Sent player %d the game state.", local_id);
-		puts(out);
-		write(sock , &super_state , sizeof(super_state));
-		local_game = super_state;
-	}
+	//if(local_id != 0){
+	sprintf(out, "Sent player %d the game state.", local_id);
+	puts(out);
+	write(sock , &super_state , sizeof(super_state));
+	local_game = super_state;
+	//}
 	//recieve gamestate and echo
 	fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
 	while(1){

@@ -31,7 +31,7 @@ int main(){
 		printf("Could not create socket");
 	}
 	
-	server.sin_addr.s_addr = inet_addr("128.200.85.17");//currently on local host for testing purposes
+	server.sin_addr.s_addr = inet_addr("127.0.0.1");//128.200.85.17
 	server.sin_family = AF_INET;
 	server.sin_port = htons( 9000 );
 
@@ -94,6 +94,7 @@ int main(){
 		game = AssignCards(game);
 		puts("Writing game to other players in session.\n");
 		write(sock, &game, sizeof(game));
+		read(sock, &game, sizeof(game));//additional read to stall the host until every player has joined
 	}else{
 		puts("Waiting for host to initialize game.\n");
 		read(sock, &game, sizeof(game));
