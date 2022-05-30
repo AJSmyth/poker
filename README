@@ -9,6 +9,9 @@
 ```
 cd src
 make
+to run the server
+run ./bin/server on the server
+to play the game as a client run ./bin/client
 ```
 
 #### run the executable in the bin directory
