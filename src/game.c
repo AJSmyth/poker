@@ -1,5 +1,4 @@
 #include "game.h"
-#include "deck.h"
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -1204,5 +1203,13 @@ void swap(int *a, int *b) {
     int X = *a;
     *a = *b;
     *b = X;
+}
+
+int nUnfolded(GAMESTATE game) {
+  int count = 0;
+  for (int i = 0; i < game.numberPlayers; ++i) {
+    if (game.players[i].action != FOLD) count++;
+  }
+  return count;
 }
    

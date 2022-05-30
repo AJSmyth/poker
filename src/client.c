@@ -1,4 +1,4 @@
-#include "deck.h"
+//#include "deck.h"
 #include "game.h"
 #include <stdio.h>
 #include <ctype.h>
@@ -171,8 +171,8 @@ int main(){
 	}
 	else
 	{
-	  game.players[Winner].Balance = game.players[Winner].Balance + game.pot;
-	  printf("Winner is Player %d\n", game.players[Winner].ID);
+	  game.players[WINNER].Balance = game.players[WINNER].Balance + game.pot;
+	  printf("Winner is Player %d\n", game.players[WINNER].ID);
 	  printf("Game over\n");
 	}
 	

@@ -2,6 +2,7 @@
 #define GAME_H
 #include <stdlib.h>
 #include <stdbool.h>
+#include "deck.h"
 
 GAMESTATE PREFLOP1(GAMESTATE game); //Bidding in PreFlop
 GAMESTATE FLOP1(GAMESTATE game);
