@@ -2,6 +2,7 @@
 #include "client.h"
 #include "deck.h"
 #include "game.h"
+#include <cairo.h>
 
 const int STARTING_BALANCE = 500;
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
@@ -19,9 +20,9 @@ static void updateData(GtkWidget *widget, gpointer data);
 static void quitGame(GtkWidget *widget, gpointer data);
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
 
-
-struct {
-  cairo_surface_t *image;  
+struct
+{
+	cairo_surface_t *image;
 } glob;
 
 static void do_drawing(cairo_t *);
@@ -195,10 +196,9 @@ int main(int argc, char *argv[])
 
 	gtk_main();
 
-	cairo_surface_destroy(glob.image);
-
 	updateData(NULL, &game);
-	gtk_main();
+
+	cairo_surface_destroy(glob.image);
 	return 0;
 }
 
@@ -318,6 +318,18 @@ static void changePlayer(GtkWidget *widget, gpointer data)
 	updateData(NULL, data);
 }
 
+void draw_image(cairo_t* cr, char* img_name, int x, int y)
+{
+    cairo_translate(cr, x, y);
+    cairo_surface_t* img = cairo_image_surface_create_from_png(img_name);
+	cairo_status_t status = cairo_surface_status(img);
+	char * msg =cairo_status_to_string(status);
+	printf("hello: %s\n", msg);
+    cairo_set_source_surface(cr, img, 0, 0);
+    cairo_paint(cr);
+    cairo_translate(cr, -x, -y);
+}
+
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 {
 	gint width, height;
@@ -336,14 +348,23 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
 						   CAIRO_FONT_WEIGHT_BOLD);
 
+	cairo_surface_t * image =  cairo_image_surface_create_from_png("pokertest.png");
+
+	if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) { 
+        printf("Could not load image \"%s\"\n", cairo_status_to_string(cairo_surface_status(image))); 
+    } 
+
+	cairo_set_source_surface(cr, image, 0.75, 0.75);
+	cairo_rectangle(cr, 0, 0, width, height);
+	cairo_fill(cr);
+
 	/* enclosing in a save/restore pair since we alter the
 	 *      * font size
 	 *           */
-	cairo_set_source_rgb(cr, 0, 0.2, 0);
-	cairo_set_line_width(cr, 1);
-	cairo_rectangle(cr, 0, 0, width, height);
-	cairo_stroke_preserve(cr);
-	cairo_fill(cr);
+	// cairo_set_source_rgb(cr, 0, 0.2, 0);
+	// // cairo_set_line_width(cr, 1);
+	// cairo_rectangle(cr, 0, 0, width, height);
+	// cairo_fill(cr);
 
 	cairo_set_font_size(cr, 40);
 	cairo_move_to(cr, 40, 60);
@@ -364,7 +385,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	}
 
 	cairo_stroke(cr);
-	
+
 	cairo_destroy(cr);
 }
 
