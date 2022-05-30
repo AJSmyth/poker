@@ -31,7 +31,7 @@ int main(){
 		printf("Could not create socket");
 	}
 	
-	server.sin_addr.s_addr = inet_addr("127.0.0.1");//currently on local host for testing purposes
+	server.sin_addr.s_addr = inet_addr("128.200.85.17");//currently on local host for testing purposes
 	server.sin_family = AF_INET;
 	server.sin_port = htons( 9000 );
 
