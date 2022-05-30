@@ -32,7 +32,7 @@ int main(){
 	
 	server.sin_addr.s_addr = inet_addr("127.0.0.1");//currently on local host for testing purposes
 	server.sin_family = AF_INET;
-	server.sin_port = htons( 9001 );
+	server.sin_port = htons( 9000 );
 
 	//Connect to remote server
 	if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
@@ -51,22 +51,6 @@ int main(){
 	// }
 	printf("Player ID: %d: ", player_net_id);
 	//------------------------ SETUP (Done by GTK) ------------------------------
-	DECK deck = INIT();
-
-	//initialize static members of game
-	GAMESTATE game;
-	//fill the player array with empty, offline players
-	CARD nullCard = {-1,-1};
-	PLAYER emptyPlayer = {-1, -1, 0, nullCard, nullCard, NoAction, NORMAL, 0, false};
-	for (int i = 0; i < 9; i++) {
-		game.players[i] = emptyPlayer;
-		game.players[i].ID = i;
-	}
-
-	//initialize other game variables
-	game.shuffleDeck = ShuffleCards (deck);
-  	game.GameCount = 0;
-	game.stage = PREFLOP;
 
 	printf("\n.------..------..------..------..------..------..------.     .------..------..------..------..------.\n");
 	printf("|Q.--. ||U.--. ||E.--. ||E.--. ||N.--. ||'.--. ||S.--. |.-.  |P.--. ||O.--. ||K.--. ||E.--. ||R.--. |\n");
@@ -76,20 +60,44 @@ int main(){
 	printf("`------'`------'`------'`------'`------'`------'`------'  '-'`------'`------'`------'`------'`------'\n");
 	printf("\nVersion Alpha: Game Logic Test -- GUI Test available in bin/GUI, although integration is not yet finished\n");
 
-	while (true) {	
-		printf("\nPlease enter the number of players: ");
-		scanf("%d", &game.numberPlayers);
-		if (game.numberPlayers > 9) printf("\nPlease enter a number between 2 and 9");
-		else break;
-	}
-	
-	//set that many players to online
-	for (int i = 0; i < game.numberPlayers; i++) {
-		game.players[i].online = true;
-		game.players[i].Balance = STARTING_BALANCE;
+	GAMESTATE game;
+	if(player_net_id == 0){
+		DECK deck = INIT();
+		
+		//fill the player array with empty, offline players
+		CARD nullCard = {-1,-1};
+		PLAYER emptyPlayer = {-1, -1, 0, nullCard, nullCard, NoAction, NORMAL, 0, false};
+		for (int i = 0; i < 9; i++) {
+			game.players[i] = emptyPlayer;
+			game.players[i].ID = i;
+		}
+
+		//initialize other game variables
+		game.shuffleDeck = ShuffleCards (deck);
+		game.GameCount = 0;
+		game.stage = PREFLOP;
+
+		while (true) {	
+			printf("\nPlease enter the number of players: ");
+			scanf("%d", &game.numberPlayers);
+			if (game.numberPlayers > 9) printf("\nPlease enter a number between 2 and 9");
+			else break;
+		}
+		
+		//set that many players to online
+		for (int i = 0; i < game.numberPlayers; i++) {
+			game.players[i].online = true;
+			game.players[i].Balance = STARTING_BALANCE;
+		}
+
+		game = AssignCards(game);
+		puts("Writing game to other players in session.\n");
+		write(sock, &game, sizeof(game));
+	}else{
+		puts("Waiting for host to initialize game.\n");
+		read(sock, &game, sizeof(game));
 	}
 
-  	game = AssignCards(game);
 	printf("\nPlayer %d has small blind", 1);
 
 	//------------------------- EVENT LOOP (Done by GTK) ----------------------
@@ -109,36 +117,46 @@ int main(){
 		char actStr[6];
 		CARD c1 = game.players[game.playerTurn].card1;
 		CARD c2 = game.players[game.playerTurn].card2;
-		printf("\nPlayer %d --  Cards: %s of %s, %s of %s -- Balance: %d", game.playerTurn + 1, RankStr(c1.rank), SuitStr(c1.suit), RankStr(c2.rank), SuitStr(c2.suit), game.players[game.playerTurn].Balance);
-		printf("\nPlayer %d, type an action: ", game.playerTurn + 1);
-		scanf("%5s", actStr);
-		for (int i = 0; i < 5; i++) actStr[i] = tolower(actStr[i]);
+		if(game.playerTurn == player_net_id){
+			printf("\nPlayer %d --  Cards: %s of %s, %s of %s -- Balance: %d", game.playerTurn + 1, RankStr(c1.rank), SuitStr(c1.suit), RankStr(c2.rank), SuitStr(c2.suit), game.players[game.playerTurn].Balance);
+			printf("\nPlayer %d, type an action: ", game.playerTurn + 1);
+			scanf("%5s", actStr);
+			for (int i = 0; i < 5; i++) actStr[i] = tolower(actStr[i]);
 
 
-		if (!strcmp(actStr, "fold") || !strcmp(actStr, "f")) {
-			game.players[game.playerTurn].action = FOLD;
-		}
-		else if (!strcmp(actStr, "call") || !strcmp(actStr, "c")) {
-			game.players[game.playerTurn].action = CALL;
-		}
-		else if (!strcmp(actStr, "check") || !strcmp(actStr, "ch")) {
-			game.players[game.playerTurn].action = CHECK;
-		}
-		else if (!strcmp(actStr, "raise") || !strcmp(actStr, "r")) {
-			game.players[game.playerTurn].action = RAISE;
-			printf("\nRaise amount: ");
-			scanf("%d", &game.players[game.playerTurn].raiseAmt);
-		}
-		else {
-			game.players[game.playerTurn].action = NoAction;
-		}
+			if (!strcmp(actStr, "fold") || !strcmp(actStr, "f")) {
+				game.players[game.playerTurn].action = FOLD;
+			}
+			else if (!strcmp(actStr, "call") || !strcmp(actStr, "c")) {
+				game.players[game.playerTurn].action = CALL;
+			}
+			else if (!strcmp(actStr, "check") || !strcmp(actStr, "ch")) {
+				game.players[game.playerTurn].action = CHECK;
+			}
+			else if (!strcmp(actStr, "raise") || !strcmp(actStr, "r")) {
+				game.players[game.playerTurn].action = RAISE;
+				printf("\nRaise amount: ");
+				scanf("%d", &game.players[game.playerTurn].raiseAmt);
+			}
+			else {
+				game.players[game.playerTurn].action = NoAction;
+			}
 
-		int tempturn = game.playerTurn;
-		STAGES tempstage = game.stage;
-		game = DoGame(game);
-		if(game.playerTurn == tempturn && game.stage == tempstage){
-			printf("\nInvalid Move!");
+			int tempturn = game.playerTurn;
+			STAGES tempstage = game.stage;
+			game = DoGame(game);
+			if(game.playerTurn == tempturn && game.stage == tempstage){
+				printf("\nInvalid Move!");
+			}else{
+				write(sock, &game, sizeof(game));
+			}
+		}else{
+			char out[100];
+			sprintf(out, "\nWaiting for player %d to take an action...", game.playerTurn + 1);
+			puts(out);
+			read(sock, &game, sizeof(game));
 		}
+		
 	}
       PLAYER P;
       P = Sequence_Winner(game); 
