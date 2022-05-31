@@ -24,9 +24,9 @@ static void quitGame(GtkWidget *widget, gpointer data);
 
 //cairo
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
-void draw_image(cairo_t *cr, char *img_name, int x, int y);
+void draw_image(cairo_t *cr, char *img_name, int x, int y, double scale);
 cairo_surface_t *scale_to_whatever(cairo_surface_t *s, int orig_width, int orig_height, double scale);
-void draw_cards(cairo_t *cr, CARD card, int x, int y);
+void draw_cards(cairo_t *cr, CARD card, int x, int y, double scale);
 
 int main(int argc, char *argv[])
 {
@@ -281,7 +281,7 @@ static void changePlayer(GtkWidget *widget, gpointer data)
 	updateData(NULL, data);
 }
 
-void draw_image(cairo_t *cr, char *img_name, int x, int y)
+void draw_image(cairo_t *cr, char *img_name, int x, int y, double scale)
 {
 	printf("%s", img_name);
 	cairo_surface_t *image = cairo_image_surface_create_from_png(img_name);
@@ -294,7 +294,7 @@ void draw_image(cairo_t *cr, char *img_name, int x, int y)
 	int imgW = cairo_image_surface_get_width(image);
 	int imgH = cairo_image_surface_get_height(image);
 
-	cairo_surface_t * scaledImage = scale_to_whatever(image, imgW, imgH, 0.1);
+	cairo_surface_t * scaledImage = scale_to_whatever(image, imgW, imgH, scale);
 	cairo_set_source_surface(cr, scaledImage, x, y);
 	cairo_paint(cr);
 }
@@ -312,7 +312,7 @@ cairo_surface_t *scale_to_whatever(cairo_surface_t *s, int orig_width, int orig_
     return result;
 }
 
-void draw_cards(cairo_t *cr, CARD card, int x, int y)
+void draw_cards(cairo_t *cr, CARD card, int x, int y, double scale)
 {
 	char buffer[100] = "";
 
@@ -320,28 +320,28 @@ void draw_cards(cairo_t *cr, CARD card, int x, int y)
 			{
 			case (0):
 				sprintf(buffer, "../assets/%s_of_diamonds.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y);
+				draw_image(cr, buffer, x, y, scale);
 				printf("%s", buffer);
 				memset(buffer, 0, 100);
 				break;
 
 			case (1):
 				sprintf(buffer, "../assets/%s_of_clubs.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y);
+				draw_image(cr, buffer, x, y, scale);
 				printf("%s", buffer);
 				memset(buffer, 0, 100);
 				break;
 
 			case (2):
 				sprintf(buffer, "../assets/%s_of_hearts.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y);
+				draw_image(cr, buffer, x, y, scale);
 				printf("%s", buffer);
 				memset(buffer, 0, 100);
 				break;
 
 			case (3):
 				sprintf(buffer, "../assets/%s_of_spades.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y);
+				draw_image(cr, buffer, x, y, scale);
 				printf("%s", buffer);
 				memset(buffer, 0, 100);
 			}
@@ -367,55 +367,80 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 	switch(StageNum(game.stage)){
 	
-	case 0:
+	case 0:	
+		//community deck (hidden)
 		for (int i = 0; i <= 4; i++)
 		{
-			draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2);
+			draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
 		}
 
-		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H));
-		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H));
+		//your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
 
-		for (int i = 0; i < game.numberPlayers; i++)
-		{
-			
+		//the rest of the players
+		for (int i = 0; i < 3; i++)
+		{	
+			int cardpos = 0 + (3*i)*(CARD_W*0.5);
+			draw_image(cr,"../assets/card_back.png", cardpos, 0, 0.05);
+			draw_image(cr,"../assets/card_back.png", cardpos + (CARD_W*0.5), 0 , 0.05);
 		}
 		break;
 
 	case 1:
-		for (int a = 0; a <= 2; a++)
-		{ 
-			
+		//community deck (3 revealing)
+		for (int i = 0; i <= 4; i++)
+		{
+			if(i < 3){
+				draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+			}else{
+				draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+			}			
 		}
-		//draw_image();
+
+		//your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
 		break;
 
 	case 2:
+		//community deck (4 revealing)
+		for (int i = 0; i <= 4; i++)
+		{
+			if(i < 4){
+				draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+			}else{
+				draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+			}			
+		}
+				//your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
 		break;
 
 	case 3:
+		//community deck (5 revealing)
+		for (int i = 0; i <= 4; i++)
+		{
+			draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+		}
+		//your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
 		break;
+	
+	case -1:
+		//the rest of the players(reveal their cards)
+		for (int i = 0; i < game.numberPlayers; i++)
+		{	
+			int cardpos = 0 + (3*i)*(CARD_W*0.5);
+			draw_cards(cr, game.players[g->ID].card1, cardpos, 0, 0.05);
+			draw_cards(cr, game.players[g->ID].card2, cardpos + (0.5*CARD_W), 0, 0.05);
+		}
 	}
 
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
 						   CAIRO_FONT_WEIGHT_BOLD);
-
-
-	//draw_image(cr, "../pokertest.png", width/2, height/2);
-	// cairo_surface_t *image = cairo_image_surface_create_from_png("pokertest.png");
-
-	// if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
-	// {
-	// 	printf("Could not load image \"%s\"\n", cairo_status_to_string(cairo_surface_status(image)));
-	// }
-
-	// int imgW = cairo_image_surface_get_width(image);
-	// int imgH = cairo_image_surface_get_height(image);
-	
-	// cairo_surface_t * test = scale_to_half(image, imgW, imgH);
-
-	// imgW = cairo_image_surface_get_width(test);
-	// imgH = cairo_image_surface_get_height(test);
 
 	// cairo_set_source_surface(cr, test, (width - imgW)/2, (height-imgH)/2);
 	// cairo_paint(cr);
@@ -570,8 +595,10 @@ int StageNum(STAGES s)
 		return 2;
 	case RIVER:
 		return 3;
-	default:
+	case WIN:
 		return -1;
+	default:
+		return -2;
 	}
 }
 
