@@ -164,7 +164,7 @@ int main(){
 	
 	if (game.SplitPot == 1)
 	{
-	  printf("Pot is split between Player %d and Player %d!\n",game.SplitPotPlayers[0],game.SplitPotPlayers[1]);
+	  printf("Pot is split between Player %d and Player %d!\n",game.SplitPotPlayers[0]+1,game.SplitPotPlayers[1]+1);
 	  printf("Game over\n");
 	  game.players[game.SplitPotPlayers[0]].Balance =+ game.pot / 2;
 	  game.players[game.SplitPotPlayers[1]].Balance =+ game.pot / 2;
@@ -173,7 +173,7 @@ int main(){
 	else
 	{
 	  game.players[WINNER].Balance = game.players[WINNER].Balance + game.pot;
-	  printf("Winner is Player %d\n", game.players[WINNER].ID);
+	  printf("Winner is Player %d\n", game.players[WINNER].ID+1);
 	  printf("Game over\n");
 	}
 	
