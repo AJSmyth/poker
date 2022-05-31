@@ -5,6 +5,8 @@
 #include <cairo.h>
 
 const int STARTING_BALANCE = 500;
+const int CARD_W = 50;
+const int CARD_H = 73;
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
 static void destroy(GtkWidget *widget, gpointer data);
 
@@ -12,34 +14,19 @@ GAMESTATE DoGame(GAMESTATE game);
 char *StageStr(STAGES s);
 char *SuitStr(SUIT s);
 char *RankStr(RANK r);
+int StageNum(STAGES s);
 
 static void startGame(GtkWidget *widget, gpointer data);
 static void changePlayer(GtkWidget *widget, gpointer data);
 static void doInput(GtkWidget *widget, gpointer data);
 static void updateData(GtkWidget *widget, gpointer data);
 static void quitGame(GtkWidget *widget, gpointer data);
+
+//cairo
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
-
-struct
-{
-	cairo_surface_t *image;
-} glob;
-
-static void do_drawing(cairo_t *);
-
-static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr,
-							  gpointer user_data)
-{
-	do_drawing(cr);
-
-	return FALSE;
-}
-
-static void do_drawing(cairo_t *cr)
-{
-	cairo_set_source_surface(cr, glob.image, 10, 10);
-	cairo_paint(cr);
-}
+void draw_image(cairo_t *cr, char *img_name, int x, int y);
+cairo_surface_t *scale_to_whatever(cairo_surface_t *s, int orig_width, int orig_height, double scale);
+void draw_cards(cairo_t *cr, CARD card, int x, int y);
 
 int main(int argc, char *argv[])
 {
@@ -126,7 +113,7 @@ int main(int argc, char *argv[])
 	gtk_widget_set_size_request(gameCanvas, 640, 420);
 
 	// game signals
-	g_signal_connect(G_OBJECT(gameCanvas), "expose-event", G_CALLBACK(paint), NULL);
+	g_signal_connect(G_OBJECT(gameCanvas), "expose-event", G_CALLBACK(paint), &game);
 	g_signal_connect(G_OBJECT(gameFold), "clicked", G_CALLBACK(doInput), &game);
 	g_signal_connect(G_OBJECT(gameCall), "clicked", G_CALLBACK(doInput), &game);
 	g_signal_connect(G_OBJECT(gameCheck), "clicked", G_CALLBACK(doInput), &game);
@@ -171,34 +158,10 @@ int main(int argc, char *argv[])
 	gtk_widget_show(mainVbox);
 	gtk_widget_show(window);
 
-	// Image processing?
-	GtkWidget *darea;
-
-	glob.image = cairo_image_surface_create_from_png("poker.png");
-
-	gtk_init(&argc, &argv);
-
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
-	darea = gtk_drawing_area_new();
-	gtk_container_add(GTK_CONTAINER(window), darea);
-
-	g_signal_connect(G_OBJECT(darea), "draw",
-					 G_CALLBACK(on_draw_event), NULL);
-	g_signal_connect(window, "destroy",
-					 G_CALLBACK(gtk_main_quit), NULL);
-
-	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-	gtk_window_set_default_size(GTK_WINDOW(window), 300, 220);
-	gtk_window_set_title(GTK_WINDOW(window), "Image");
-
-	gtk_widget_show_all(window);
-
 	gtk_main();
 
 	updateData(NULL, &game);
 
-	cairo_surface_destroy(glob.image);
 	return 0;
 }
 
@@ -318,16 +281,70 @@ static void changePlayer(GtkWidget *widget, gpointer data)
 	updateData(NULL, data);
 }
 
-void draw_image(cairo_t* cr, char* img_name, int x, int y)
+void draw_image(cairo_t *cr, char *img_name, int x, int y)
 {
-    cairo_translate(cr, x, y);
-    cairo_surface_t* img = cairo_image_surface_create_from_png(img_name);
-	cairo_status_t status = cairo_surface_status(img);
-	char * msg =cairo_status_to_string(status);
-	printf("hello: %s\n", msg);
-    cairo_set_source_surface(cr, img, 0, 0);
+	printf("%s", img_name);
+	cairo_surface_t *image = cairo_image_surface_create_from_png(img_name);
+
+	if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
+	{
+		printf("Could not load image \"%s\"\n", cairo_status_to_string(cairo_surface_status(image)));
+	}
+
+	int imgW = cairo_image_surface_get_width(image);
+	int imgH = cairo_image_surface_get_height(image);
+
+	cairo_surface_t * scaledImage = scale_to_whatever(image, imgW, imgH, 0.1);
+	cairo_set_source_surface(cr, scaledImage, x, y);
+	cairo_paint(cr);
+}
+
+cairo_surface_t *scale_to_whatever(cairo_surface_t *s, int orig_width, int orig_height, double scale)
+{
+    cairo_surface_t *result = cairo_surface_create_similar(s,
+            cairo_surface_get_content(s), orig_width/2, orig_height/2);
+    cairo_t *cr = cairo_create(result);
+    cairo_scale(cr, scale, scale);
+    cairo_set_source_surface(cr, s, 0, 0);
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint(cr);
-    cairo_translate(cr, -x, -y);
+    cairo_destroy(cr);
+    return result;
+}
+
+void draw_cards(cairo_t *cr, CARD card, int x, int y)
+{
+	char buffer[100] = "";
+
+	switch (card.suit)
+			{
+			case (0):
+				sprintf(buffer, "../assets/%s_of_diamonds.png", RankStr(card.rank));
+				draw_image(cr, buffer, x, y);
+				printf("%s", buffer);
+				memset(buffer, 0, 100);
+				break;
+
+			case (1):
+				sprintf(buffer, "../assets/%s_of_clubs.png", RankStr(card.rank));
+				draw_image(cr, buffer, x, y);
+				printf("%s", buffer);
+				memset(buffer, 0, 100);
+				break;
+
+			case (2):
+				sprintf(buffer, "../assets/%s_of_hearts.png", RankStr(card.rank));
+				draw_image(cr, buffer, x, y);
+				printf("%s", buffer);
+				memset(buffer, 0, 100);
+				break;
+
+			case (3):
+				sprintf(buffer, "../assets/%s_of_spades.png", RankStr(card.rank));
+				draw_image(cr, buffer, x, y);
+				printf("%s", buffer);
+				memset(buffer, 0, 100);
+			}
 }
 
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
@@ -342,49 +359,68 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	cr = gdk_cairo_create(widget->window);
 
 	/* clear background */
-	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_set_source_rgb(cr, 0, 0.2, 0);
 	cairo_paint(cr);
+
+	Game *g = data;
+	GAMESTATE game = g->gs;
+
+	switch(StageNum(game.stage)){
+	
+	case 0:
+		for (int i = 0; i <= 4; i++)
+		{
+			draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2);
+		}
+
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H));
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H));
+
+		for (int i = 0; i < game.numberPlayers; i++)
+		{
+			
+		}
+		break;
+
+	case 1:
+		for (int a = 0; a <= 2; a++)
+		{ 
+			
+		}
+		//draw_image();
+		break;
+
+	case 2:
+		break;
+
+	case 3:
+		break;
+	}
 
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
 						   CAIRO_FONT_WEIGHT_BOLD);
 
-	cairo_surface_t * image =  cairo_image_surface_create_from_png("pokertest.png");
 
-	if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS) { 
-        printf("Could not load image \"%s\"\n", cairo_status_to_string(cairo_surface_status(image))); 
-    } 
+	//draw_image(cr, "../pokertest.png", width/2, height/2);
+	// cairo_surface_t *image = cairo_image_surface_create_from_png("pokertest.png");
 
-	cairo_set_source_surface(cr, image, 0.75, 0.75);
-	cairo_rectangle(cr, 0, 0, width, height);
-	cairo_fill(cr);
+	// if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
+	// {
+	// 	printf("Could not load image \"%s\"\n", cairo_status_to_string(cairo_surface_status(image)));
+	// }
 
-	/* enclosing in a save/restore pair since we alter the
-	 *      * font size
-	 *           */
-	// cairo_set_source_rgb(cr, 0, 0.2, 0);
-	// // cairo_set_line_width(cr, 1);
+	// int imgW = cairo_image_surface_get_width(image);
+	// int imgH = cairo_image_surface_get_height(image);
+	
+	// cairo_surface_t * test = scale_to_half(image, imgW, imgH);
+
+	// imgW = cairo_image_surface_get_width(test);
+	// imgH = cairo_image_surface_get_height(test);
+
+	// cairo_set_source_surface(cr, test, (width - imgW)/2, (height-imgH)/2);
+	// cairo_paint(cr);
 	// cairo_rectangle(cr, 0, 0, width, height);
 	// cairo_fill(cr);
-
-	cairo_set_font_size(cr, 40);
-	cairo_move_to(cr, 40, 60);
-	cairo_set_source_rgb(cr, 0, 0, 0);
-	cairo_show_text(cr, "Queen's Poker");
-
-	cairo_move_to(cr, width / 4, height / 2);
-
-	cairo_set_source_rgb(cr, 0, 0, 0);
-
-	for (i = 1; i <= 5; i++)
-	{
-		cairo_set_source_rgb(cr, 0, 0, 0);
-		cairo_line_to(cr, (width / 4) + i * 40, height / 2);
-		cairo_rel_line_to(cr, 0, 50);
-		cairo_rel_line_to(cr, (width / 4) - i * 40, 0);
-		cairo_close_path(cr);
-	}
-
-	cairo_stroke(cr);
 
 	cairo_destroy(cr);
 }
@@ -519,6 +555,23 @@ char *StageStr(STAGES s)
 		return "river";
 	default:
 		return "undefined stage!";
+	}
+}
+
+int StageNum(STAGES s)
+{
+	switch (s)
+	{
+	case PREFLOP:
+		return 0;
+	case FLOP:
+		return 1;
+	case TURN:
+		return 2;
+	case RIVER:
+		return 3;
+	default:
+		return -1;
 	}
 }
 
