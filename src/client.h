@@ -10,6 +10,8 @@ typedef enum {
 
 typedef struct {
 	GtkWidget *vbox;
+	GtkWidget *playerBtn;
+	GtkWidget *server;
 } MenuObjects;
 
 typedef struct {
@@ -19,7 +21,6 @@ typedef struct {
 	GtkWidget *cardLabel;
 	GtkWidget *playerLabel;
 	GtkWidget *raiseBtn;
-	GtkWidget *playerBtn;
 } GameObjects;
 
 typedef struct {
@@ -27,6 +28,7 @@ typedef struct {
 	MenuObjects menu;
 	GameObjects game;
 	GAMESTATE gs;
+	int fd;
 
 	int ID;
 } Game;

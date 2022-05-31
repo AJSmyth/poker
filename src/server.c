@@ -1,236 +1,140 @@
+#include<stdio.h>
+#include<string.h>	//strlen
+#include<sys/socket.h>
+#include<arpa/inet.h>	//inet_addr
+#include<unistd.h>	//write
+#include <pthread.h>
 #include "deck.h"
 #include "game.h"
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
+#include <fcntl.h>
 
-const int STARTING_BALANCE = 500;
-const int SMALL_BLIND = 5;
+int player_count = 3;
 
-GAMESTATE DoGame(GAMESTATE game);
-char *StageStr(STAGES s);
-char *SuitStr(SUIT s);
-char *RankStr(RANK r);
+int player_id = 0;
 
-int main(){
-	//------------------------ SETUP (Done by GTK) ------------------------------
-	DECK deck = INIT();
+pthread_mutex_t mutex;
 
-	//initialize static members of game
-	GAMESTATE game;
-	//fill the player array with empty, offline players
-	CARD nullCard = {-1,-1};
-	PLAYER emptyPlayer = {-1, -1, 0, nullCard, nullCard, NoAction, NORMAL, 0, false};
-	for (int i = 0; i < 9; i++) {
-		game.players[i] = emptyPlayer;
-		game.players[i].ID = i;
-	}
+GAMESTATE super_state;
 
-	//initialize other game variables
-	game.shuffleDeck = ShuffleCards (deck);
-  game.GameCount = 0;
-	game.stage = PREFLOP;
+void *connection_handler(void *socket_desc);
 
-	printf("\n.------..------..------..------..------..------..------.     .------..------..------..------..------.\n");
-	printf("|Q.--. ||U.--. ||E.--. ||E.--. ||N.--. ||'.--. ||S.--. |.-.  |P.--. ||O.--. ||K.--. ||E.--. ||R.--. |\n");
-	printf("| (\\/) || (\\/) || (\\/) || (\\/) || :(): || :/\\: || :/\\: ((5)) | :/\\: || :/\\: || :/\\: || (\\/) || :(): |\n");
-	printf("| :\\/: || :\\/: || :\\/: || :\\/: || ()() || :\\/: || :\\/: |'-.-.| (__) || :\\/: || :\\/: || :\\/: || ()() |\n");
-	printf("| '--'Q|| '--'U|| '--'E|| '--'E|| '--'N|| '--''|| '--'S| ((1)) '--'P|| '--'O|| '--'K|| '--'E|| '--'R|\n");
-	printf("`------'`------'`------'`------'`------'`------'`------'  '-'`------'`------'`------'`------'`------'\n");
-	printf("\nVersion Alpha: Game Logic Test -- GUI Test available in bin/GUI, although integration is not yet finished\n");
 
-	while (true) {	
-		printf("\nPlease enter the number of players: ");
-		scanf("%d", &game.numberPlayers);
-		if (game.numberPlayers > 9) printf("\nPlease enter a number between 2 and 9");
-		else break;
+int main(int argc , char *argv[])
+{
+	int socket_desc , client_sock , c;
+	struct sockaddr_in server , client;
+	
+	//Create socket
+	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+	if (socket_desc == -1)
+	{
+		printf("Could not create socket.");
 	}
 	
-	//set that many players to online
-	for (int i = 0; i < game.numberPlayers; i++) {
-		game.players[i].online = true;
-		game.players[i].Balance = STARTING_BALANCE;
+	//Prepare the sockaddr_in structure
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons( 9000 );
+	
+	//Bind
+	if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
+	{
+		//print the error message
+		perror("bind failed.");
+		return 1;
+	}
+	puts("Waiting for players...");
+	//Listen
+	if(listen(socket_desc , player_count)){
+		perror("listen failed.");
+		return 1;
+	}
+	
+	//Accept and incoming connection
+	c = sizeof(struct sockaddr_in);
+	pthread_t thread[player_count];
+	int i = 0;
+	
+	pthread_mutex_init(&mutex, NULL);
+	//accept connection from an incoming client
+	while(client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)){
+        //create thread for each accepted connection
+		char out[25];
+		sprintf(out, "Creating thread for new player.");
+		puts(out);
+        if( pthread_create( thread+i, NULL ,  connection_handler , (void*) &client_sock) < 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+		i++;
 	}
 
-  	game = AssignCards(game);
-	printf("\nPlayer %d has small blind", 1);
-
-	//------------------------- EVENT LOOP (Done by GTK) ----------------------
-	while (game.stage != WIN) {
-		printf("\n\nCurrent Stage: %s -- Pot: %d, Current Call: %d", StageStr(game.stage), game.pot, game.currCall);
-		//print community cards if applicable
-		if (game.stage >= FLOP) {
-			printf("\nCommunity Cards: ");
-			int nCards = 3 + (game.stage - FLOP);
-			for (int i = 0; i < nCards; i++) {
-				printf("%s of %s", RankStr(game.communityCards.cards[i].rank), SuitStr(game.communityCards.cards[i].suit));
-				if (i != nCards - 1) printf(", ");
-			}
-		}
-
-
-		char actStr[6];
-		CARD c1 = game.players[game.playerTurn].card1;
-		CARD c2 = game.players[game.playerTurn].card2;
-		printf("\nPlayer %d --  Cards: %s of %s, %s of %s -- Balance: %d", game.playerTurn + 1, RankStr(c1.rank), SuitStr(c1.suit), RankStr(c2.rank), SuitStr(c2.suit), game.players[game.playerTurn].Balance);
-		printf("\nPlayer %d, type an action: ", game.playerTurn + 1);
-		scanf("%5s", actStr);
-		for (int i = 0; i < 5; i++) actStr[i] = tolower(actStr[i]);
-
-
-		if (!strcmp(actStr, "fold") || !strcmp(actStr, "f")) {
-			game.players[game.playerTurn].action = FOLD;
-		}
-		else if (!strcmp(actStr, "call") || !strcmp(actStr, "c")) {
-			game.players[game.playerTurn].action = CALL;
-		}
-		else if (!strcmp(actStr, "check") || !strcmp(actStr, "ch")) {
-			game.players[game.playerTurn].action = CHECK;
-		}
-		else if (!strcmp(actStr, "raise") || !strcmp(actStr, "r")) {
-			game.players[game.playerTurn].action = RAISE;
-			printf("\nRaise amount: ");
-			scanf("%d", &game.players[game.playerTurn].raiseAmt);
-		}
-		else {
-			game.players[game.playerTurn].action = NoAction;
-		}
-
-		int tempturn = game.playerTurn;
-		STAGES tempstage = game.stage;
-		game = DoGame(game);
-		if(game.playerTurn == tempturn && game.stage == tempstage){
-			printf("\nInvalid Move!");
-		}
+	for(int i = 0; i < player_count; i++){
+		pthread_join(thread[i], NULL);
 	}
+	
 	return 0;
 }
 
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    int sock = *(int*)socket_desc;
+	//player id local to thread
+	int local_id;
+	//local game state
+	GAMESTATE local_game;
+	//lock game state initialization code
+	pthread_mutex_lock(&mutex);
+	//begin initial handshake and assign player id
+	write(sock , &player_id , sizeof(player_id));
+	char out[100];
+	sprintf(out, "Sent player ID: %d", player_id);
+	puts(out);
 
-
-//only called after player move, playerTurn will point to moving player
-GAMESTATE DoGame(GAMESTATE game) {
-  //check player actions
-  
-  int validmove = 1;
-  switch(game.players[game.playerTurn].action){
-    case CALL:
-      if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
-        game.players[game.playerTurn].Bid = game.currCall;
-        game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-        game.pot += game.currCall;
-      }else{
-        validmove = 0;
-      }
-    break;
-
-    case RAISE:
-      game.currCall += game.players[game.playerTurn].raiseAmt;
-      game.players[game.playerTurn].Bid = game.currCall;
-      game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-      game.pot += game.currCall;
-    break;
-    
-    case CHECK:
-      //can do it better by resetting bid & checking if player is at call
-      if(game.players[game.playerTurn].role == SMALLBLIND && game.stage != PREFLOP){
-        game.players[game.playerTurn].Bid = 0;
-        break;
-      }
-      else if(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP) {
-	//bet is set to 0 in setup to avoid premature progression
-        game.players[game.playerTurn].Bid = 10;
-	break;
-      }
-      
-      if (game.currCall == 0) game.players[game.playerTurn].Bid = 0;
-      else if (game.players[game.playerTurn].Bid != game.currCall) validmove = 0;
-    break;
-
-    case FOLD:
-    	validmove = 1;
-	int count;
-	for (int i = 0; i < game.numberPlayers; i++) {
-		if (game.players[game.numberPlayers].action != FOLD) count++;
+	local_id = player_id;
+	player_id++;
+	//get initial game state from player 0 AKA the host
+	if(local_id == 0){
+		puts("Waiting for initial game...");
+		if(read(sock , &super_state , sizeof(super_state)) < 0){
+			printf("failed to recieve initial game state.");
+			close(sock);
+			return 1;
+		}
+		local_game = super_state;
+		player_count = super_state.numberPlayers;
+		puts("Initial game recieved");
 	}
-	if (count == 1) game.stage = WIN;
-    break;
-
-    default:
-        validmove = 0;
-    break;
-  }
-
-  //stage change logic
-  if(!(game.players[game.playerTurn].role == SMALLBLIND && game.players[game.playerTurn].action == FOLD) && EQUALBIDS(game) == 1 && validmove == 1){
-    if(game.stage != RIVER){
-      //set all bets to -1 to avoid premature progression
-      for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
-
-      game.playerTurn = 0;
-      game.currCall = 0;
-      game.stage++;
-    }else{
-      printf("Game over");
-      game.stage = WIN;
-      //end game/restart
-    }
-  }
-
-  //turn incrementing logic
-  else {
-	  if(validmove == 1){
-	    while (true) {
-	      if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
-	      else (game.playerTurn = 0);
-
-	      if (game.players[game.playerTurn].action != FOLD) break;
-		  }
-	  }
-  }
-
-  return game;
-}
-
-char *StageStr(STAGES s) {
-	switch (s) {
-		case PREFLOP:
-		return "preflop";
-		case FLOP:
-		return "flop";
-		case TURN:
-		return "turn";
-		case RIVER:
-		return "river";
-		default:
-		return "undefined stage!";
+	pthread_mutex_unlock(&mutex);
+	//wait for all players to join
+	bool done = false;
+	while (!done) {
+		// sprintf(out, "%d", player_id);
+		// puts(out);
+		pthread_mutex_lock(&mutex);
+		done = player_id == player_count;
+		pthread_mutex_unlock(&mutex);
 	}
-}	
 
-char *RankStr(RANK r) {
-	//looks dumb but significantly easier than alternative
-	switch (r) {
-		case ACE: return "ace";
-		case 2: return "2";
-		case 3: return "3";
-		case 4: return "4";
-		case 5: return "5";
-		case 6: return "6";
-		case 7: return "7";
-		case 8: return "8";
-		case 9: return "9";
-		case 10: return "10";
-		case JACK: return "jack";
-		case QUEEN: return "queen";
-		case KING: return "king";
+	//echo game state to all other players
+	//if(local_id != 0){
+	sprintf(out, "Sent player %d the game state.", local_id);
+	puts(out);
+	write(sock , &super_state , sizeof(super_state));
+	local_game = super_state;
+	//}
+	//recieve gamestate and echo
+	fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
+	while(1){
+		read(sock , &super_state , sizeof(super_state));
+		if(super_state.playerTurn != local_game.playerTurn || super_state.stage != local_game.stage){
+			sprintf(out, "Updating player %d with the new game state.", local_id);
+			puts(out);
+			write(sock , &super_state , sizeof(super_state));
+			local_game = super_state;
+		}
 	}
-}
-
-char *SuitStr(SUIT s) {
-       switch (s) {
-	       case DIAMONDS: return "diamonds";
-	       case HEARTS: return "hearts";
-	       case SPADES: return "spades";
-		case CLUBS: return "clubs";			    
-	}
-}
+    return 0;
+} 
