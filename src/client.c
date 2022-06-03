@@ -22,11 +22,13 @@ static void doInput(GtkWidget *widget, gpointer data);
 static void updateData(GtkWidget *widget, gpointer data);
 static void quitGame(GtkWidget *widget, gpointer data);
 
-//cairo
+// cairo
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
 void draw_image(cairo_t *cr, char *img_name, int x, int y, double scale);
 cairo_surface_t *scale_to_whatever(cairo_surface_t *s, int orig_width, int orig_height, double scale);
 void draw_cards(cairo_t *cr, CARD card, int x, int y, double scale);
+void draw_text(cairo_t *cr, char *text, double x, double y, double size);
+void draw_title(cairo_t *cr, char *text, double x, double y, double size);
 
 int main(int argc, char *argv[])
 {
@@ -294,22 +296,22 @@ void draw_image(cairo_t *cr, char *img_name, int x, int y, double scale)
 	int imgW = cairo_image_surface_get_width(image);
 	int imgH = cairo_image_surface_get_height(image);
 
-	cairo_surface_t * scaledImage = scale_to_whatever(image, imgW, imgH, scale);
+	cairo_surface_t *scaledImage = scale_to_whatever(image, imgW, imgH, scale);
 	cairo_set_source_surface(cr, scaledImage, x, y);
 	cairo_paint(cr);
 }
 
 cairo_surface_t *scale_to_whatever(cairo_surface_t *s, int orig_width, int orig_height, double scale)
 {
-    cairo_surface_t *result = cairo_surface_create_similar(s,
-            cairo_surface_get_content(s), orig_width/2, orig_height/2);
-    cairo_t *cr = cairo_create(result);
-    cairo_scale(cr, scale, scale);
-    cairo_set_source_surface(cr, s, 0, 0);
-    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-    cairo_paint(cr);
-    cairo_destroy(cr);
-    return result;
+	cairo_surface_t *result = cairo_surface_create_similar(s,
+														   cairo_surface_get_content(s), orig_width / 2, orig_height / 2);
+	cairo_t *cr = cairo_create(result);
+	cairo_scale(cr, scale, scale);
+	cairo_set_source_surface(cr, s, 0, 0);
+	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+	cairo_paint(cr);
+	cairo_destroy(cr);
+	return result;
 }
 
 void draw_cards(cairo_t *cr, CARD card, int x, int y, double scale)
@@ -317,34 +319,56 @@ void draw_cards(cairo_t *cr, CARD card, int x, int y, double scale)
 	char buffer[100] = "";
 
 	switch (card.suit)
-			{
-			case (0):
-				sprintf(buffer, "../assets/%s_of_diamonds.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y, scale);
-				printf("%s", buffer);
-				memset(buffer, 0, 100);
-				break;
+	{
+	case (0):
+		sprintf(buffer, "../assets/%s_of_diamonds.png", RankStr(card.rank));
+		draw_image(cr, buffer, x, y, scale);
+		printf("%s", buffer);
+		memset(buffer, 0, 100);
+		break;
 
-			case (1):
-				sprintf(buffer, "../assets/%s_of_clubs.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y, scale);
-				printf("%s", buffer);
-				memset(buffer, 0, 100);
-				break;
+	case (1):
+		sprintf(buffer, "../assets/%s_of_clubs.png", RankStr(card.rank));
+		draw_image(cr, buffer, x, y, scale);
+		printf("%s", buffer);
+		memset(buffer, 0, 100);
+		break;
 
-			case (2):
-				sprintf(buffer, "../assets/%s_of_hearts.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y, scale);
-				printf("%s", buffer);
-				memset(buffer, 0, 100);
-				break;
+	case (2):
+		sprintf(buffer, "../assets/%s_of_hearts.png", RankStr(card.rank));
+		draw_image(cr, buffer, x, y, scale);
+		printf("%s", buffer);
+		memset(buffer, 0, 100);
+		break;
 
-			case (3):
-				sprintf(buffer, "../assets/%s_of_spades.png", RankStr(card.rank));
-				draw_image(cr, buffer, x, y, scale);
-				printf("%s", buffer);
-				memset(buffer, 0, 100);
-			}
+	case (3):
+		sprintf(buffer, "../assets/%s_of_spades.png", RankStr(card.rank));
+		draw_image(cr, buffer, x, y, scale);
+		printf("%s", buffer);
+		memset(buffer, 0, 100);
+	}
+}
+
+void draw_text(cairo_t *cr, char *text, double x, double y, double size)
+{
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
+						   CAIRO_FONT_WEIGHT_BOLD);
+	cairo_set_font_size(cr, size);
+	printf("%s\n", text);
+	cairo_move_to(cr, x, y);
+	cairo_show_text(cr, text);
+}
+
+void draw_title(cairo_t *cr, char *text, double x, double y, double size)
+{
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_select_font_face(cr, "Apple Chancery", CAIRO_FONT_SLANT_NORMAL,
+						   CAIRO_FONT_WEIGHT_BOLD);
+	cairo_set_font_size(cr, size);
+	printf("%s\n", text);
+	cairo_move_to(cr, x, y);
+	cairo_show_text(cr, text);
 }
 
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
@@ -365,88 +389,280 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	Game *g = data;
 	GAMESTATE game = g->gs;
 
-	switch(StageNum(game.stage)){
-	
-	case 0:	
-		//community deck (hidden)
+	char buffer[100];
+	switch (StageNum(game.stage))
+	{
+
+	case 0:
+
+		sprintf(buffer, "Stage: %s", StageStr(game.stage));
+		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		memset(buffer, 0, 100);
+
+		// community deck (hidden)
 		for (int i = 0; i <= 4; i++)
 		{
-			draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+			draw_image(cr, "../assets/card_back.png", ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
 		}
 
-		//your own hand!
-		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
-		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
+		// your own hand!
 
-		//the rest of the players
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+		if (game.players[g->ID].action == FOLD)
+		{
+			// shadow cards when user folds
+			cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_fill(cr);
+		}
+
+		int spacing = 0;
+		// the rest of the players (hidden)
 		for (int i = 0; i < 3; i++)
-		{	
-			int cardpos = 0 + (3*i)*(CARD_W*0.5);
-			draw_image(cr,"../assets/card_back.png", cardpos, 0, 0.05);
-			draw_image(cr,"../assets/card_back.png", cardpos + (CARD_W*0.5), 0 , 0.05);
+		{
+			if (i != g->ID)
+			{
+				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+
+				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
+				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+
+				if (game.players[g->ID].action == FOLD)
+				{
+					// shadow cards when user folds
+					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_fill(cr);
+				}
+
+				sprintf(buffer, "id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+			}
+			else
+			{
+				spacing = 1;
+			}
 		}
 		break;
 
 	case 1:
-		//community deck (3 revealing)
+
+		sprintf(buffer, "Stage: %s", StageStr(game.stage));
+		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		memset(buffer, 0, 100);
+
+		// community deck (3 revealing)
 		for (int i = 0; i <= 4; i++)
 		{
-			if(i < 3){
-				draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
-			}else{
-				draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
-			}			
+			if (i < 3)
+			{
+				draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
+			}
+			else
+			{
+				draw_image(cr, "../assets/card_back.png", ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
+			}
 		}
 
-		//your own hand!
-		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
-		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
+		// your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+		if (game.players[g->ID].action == FOLD)
+		{
+			// shadow cards when user folds
+			cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_fill(cr);
+		}
+
+		for (int i = 0; i < 3; i++)
+		{
+			if (i != g->ID)
+			{
+				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+
+				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
+				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+
+				if (game.players[g->ID].action == FOLD)
+				{
+					// shadow cards when user folds
+					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_fill(cr);
+				}
+
+				sprintf(buffer, "id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+			}
+			else
+			{
+				spacing = 1;
+			}
+		}
 		break;
 
 	case 2:
-		//community deck (4 revealing)
+
+		sprintf(buffer, "Stage: %s", StageStr(game.stage));
+		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		memset(buffer, 0, 100);
+		// community deck (4 revealing)
 		for (int i = 0; i <= 4; i++)
 		{
-			if(i < 4){
-				draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
-			}else{
-				draw_image(cr,"../assets/card_back.png", ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
-			}			
+			if (i < 4)
+			{
+				draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
+			}
+			else
+			{
+				draw_image(cr, "../assets/card_back.png", ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
+			}
 		}
-				//your own hand!
-		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
-		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
+		// your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+		if (game.players[g->ID].action == FOLD)
+		{
+			// shadow cards when user folds
+			cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_fill(cr);
+		}
+
+		for (int i = 0; i < 3; i++)
+		{
+			if (i != g->ID)
+			{
+				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+
+				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
+				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+
+				if (game.players[g->ID].action == FOLD)
+				{
+					// shadow cards when user folds
+					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_fill(cr);
+				}
+
+				sprintf(buffer, "id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+			}
+			else
+			{
+				spacing = 1;
+			}
+		}
+
 		break;
 
 	case 3:
-		//community deck (5 revealing)
+
+		sprintf(buffer, "Stage: %s", StageStr(game.stage));
+		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		memset(buffer, 0, 100);
+		// community deck (5 revealing)
 		for (int i = 0; i <= 4; i++)
 		{
-			draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W)/2 + i*(CARD_W)) - 4*(CARD_W/2), (height - CARD_H)/2, 0.1);
+			draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
 		}
-		//your own hand!
-		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W)/2 - (CARD_W/2)), (height - CARD_H), 0.1);
-		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W)/2 - (CARD_W/2)) + CARD_W, (height - CARD_H), 0.1);
+		// your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+		if (game.players[g->ID].action == FOLD)
+		{
+			// shadow cards when user folds
+			cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_fill(cr);
+		}
+
+		for (int i = 0; i < 3; i++)
+		{
+			if (i != g->ID)
+			{
+				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+
+				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
+				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+
+				if (game.players[g->ID].action == FOLD)
+				{
+					// shadow cards when user folds
+					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_fill(cr);
+				}
+
+				sprintf(buffer, "id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+			}
+			else
+			{
+				spacing = 1;
+			}
+		}
+
 		break;
-	
+
 	case -1:
-		//the rest of the players(reveal their cards)
+
+		sprintf(buffer, "%s is the winner!", StageStr(game.stage));
+		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		memset(buffer, 0, 100);
+
+		if (game.players[g->ID].action == FOLD)
+		{
+			// shadow cards when user folds
+			cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_fill(cr);
+		}
+
+		// the rest of the players(reveal their cards)
 		for (int i = 0; i < game.numberPlayers; i++)
-		{	
-			int cardpos = 0 + (3*i)*(CARD_W*0.5);
-			draw_cards(cr, game.players[g->ID].card1, cardpos, 0, 0.05);
-			draw_cards(cr, game.players[g->ID].card2, cardpos + (0.5*CARD_W), 0, 0.05);
+		{
+			if (i != g->ID)
+			{
+				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+
+				draw_cards(cr, game.players[g->ID].card1, cardpos, 0, 0.05);
+				draw_cards(cr, game.players[g->ID].card2, cardpos + (0.5 * CARD_W), 0, 0.05);
+
+				if (game.players[g->ID].action == FOLD)
+				{
+					// shadow cards when user folds
+					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_fill(cr);
+				}
+
+				sprintf(buffer, "id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+			}
+			else
+			{
+				spacing = 1;
+			}
 		}
 	}
-
-	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
-						   CAIRO_FONT_WEIGHT_BOLD);
-
-	// cairo_set_source_surface(cr, test, (width - imgW)/2, (height-imgH)/2);
-	// cairo_paint(cr);
-	// cairo_rectangle(cr, 0, 0, width, height);
-	// cairo_fill(cr);
-
+	
 	cairo_destroy(cr);
 }
 
@@ -571,13 +787,13 @@ char *StageStr(STAGES s)
 	switch (s)
 	{
 	case PREFLOP:
-		return "preflop";
+		return "Preflop";
 	case FLOP:
-		return "flop";
+		return "Flop";
 	case TURN:
-		return "turn";
+		return "Turn";
 	case RIVER:
-		return "river";
+		return "River";
 	default:
 		return "undefined stage!";
 	}
