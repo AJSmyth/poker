@@ -364,11 +364,18 @@ void *connection_handler(void *game)
 
 
 static void quitGame(GtkWidget *widget, gpointer data) {
-	Game *game = data;
-	gtk_widget_hide(game->game.vbox);
-	gtk_widget_show(game->menu.vbox);
-	game->state = MENU;
-	close(game->fd);
+	Game *g = data;
+
+	PacketType update = GS_UPDATE;
+	g->gs.players[g->ID].action = FOLD;
+	write(g->fd, &update, sizeof(update));
+	write(g->fd, &g->gs, sizeof(g->gs));
+
+	gtk_widget_hide(g->game.vbox);
+	gtk_widget_show(g->menu.vbox);
+	g->state = MENU;
+
+	close(g->fd);
 }
 
 void draw_image(cairo_t *cr, char *img_name, int x, int y, double scale)
@@ -892,8 +899,8 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			{
 				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
 
-				draw_cards(cr, game.players[g->ID].card1, cardpos, 0, 0.05);
-				draw_cards(cr, game.players[g->ID].card2, cardpos + (0.5 * CARD_W), 0, 0.05);
+				draw_cards(cr, game.players[i].card1, cardpos, 0, 0.05);
+				draw_cards(cr, game.players[i].card2, cardpos + (0.5 * CARD_W), 0, 0.05);
 
 				// highlight cards if its player's turn
 				if ((game.playerTurn == i) && game.players[i].action != FOLD)
@@ -936,45 +943,53 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 GAMESTATE DoGame(GAMESTATE game) {
 	//check player actions
 	int validmove = 1;
-	switch(game.players[game.playerTurn].action){
-	case CALL:
-		if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
-	game.players[game.playerTurn].Bid = game.currCall;
-	game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-	game.pot += game.currCall;
-		}else{
-	validmove = 0;
-		}
-	break;
+	if (game.players[game.playerTurn].Balance >= game.currCall) {
+		switch(game.players[game.playerTurn].action){
+		case CALL:
+			if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
+				game.players[game.playerTurn].Bid = game.currCall;
+				game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
+				game.pot += game.currCall;
+			}else{
+		validmove = 0;
+			}
+		break;
 
-	case RAISE:
-		game.currCall += game.players[game.playerTurn].raiseAmt;
-		game.players[game.playerTurn].Bid = game.currCall;
-		game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-		game.pot += game.currCall;
-	break;
+		case RAISE:
+			if (game.players[game.playerTurn].Balance - game.players[game.playerTurn].raiseAmt >= 0){
+				game.currCall += game.players[game.playerTurn].raiseAmt;
+				game.players[game.playerTurn].Bid = game.currCall;
+				game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
+				game.pot += game.currCall;
+			}
+			else validmove = 0;
+		break;
 
-	case CHECK:
-		//can do it better by resetting bid & checking if player is at call
-		if(game.players[game.playerTurn].Bid == game.currCall || (game.players[game.playerTurn].Bid == -1 && game.currCall == 0)){
-		game.players[game.playerTurn].Bid = game.currCall;
+		case CHECK:
+			//can do it better by resetting bid & checking if player is at call
+			if(game.players[game.playerTurn].Bid == game.currCall || (game.players[game.playerTurn].Bid == -1 && game.currCall == 0)){
+			game.players[game.playerTurn].Bid = game.currCall;
+			break;
+			}
+			else validmove = 0;
+		break;
+
+		case FOLD:
+			int count = 0;
+			for (int i = 0; i < game.numberPlayers; i++) {
+				if (game.players[game.numberPlayers].action != FOLD) count++;
+			}
+			if (count == 1) game.stage = WIN;
+			break;
+
+			default:
+			validmove = 0;
 		break;
 		}
-		else validmove = 0;
-	break;
-
-	case FOLD:
-	int count = 0;
-	for (int i = 0; i < game.numberPlayers; i++) {
-		if (game.players[game.numberPlayers].action != FOLD) count++;
+	} else {
+		game.players[game.numberPlayers].action == FOLD;
 	}
-	if (count == 1) game.stage = WIN;
-	break;
 
-	default:
-	validmove = 0;
-	break;
-	}
 
 	if (nUnfolded(game) != 1) {
 	    if(validmove == 1){
