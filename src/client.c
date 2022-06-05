@@ -107,7 +107,7 @@ int main(int argc, char *argv[] ) {
 
 	//=================================== GAME =====================================	
 	//initialize game widgets
-	GtkWidget *gameCanvas = gtk_drawing_area_new();
+	game.game.canvas = gtk_drawing_area_new();
 	GtkWidget *gameQuit = gtk_button_new_with_label("Quit");
 	GtkWidget *gameFold = gtk_button_new_with_label("Fold");
 	GtkWidget *gameCall = gtk_button_new_with_label("Call");
@@ -123,10 +123,10 @@ int main(int argc, char *argv[] ) {
 	game.game.vbox = gtk_vbox_new(FALSE, 1);
 	game.game.mainLabel = gtk_label_new("Ur move dumbass");
 	GtkWidget *gameHboxBtn = gtk_hbox_new(TRUE, 1);
-	gtk_widget_set_size_request(gameCanvas, 640, 420);
+	gtk_widget_set_size_request(game.game.canvas, 640, 420);
 
 	//game signals
-	g_signal_connect(G_OBJECT(gameCanvas), "expose-event", G_CALLBACK(paint), &game);
+	g_signal_connect(G_OBJECT(game.game.canvas), "expose-event", G_CALLBACK(paint), &game);
 	g_signal_connect(G_OBJECT(gameFold), "clicked", G_CALLBACK(doInput), &game);
 	g_signal_connect(G_OBJECT(gameCall), "clicked", G_CALLBACK(doInput), &game);
 	g_signal_connect(G_OBJECT(gameCheck), "clicked", G_CALLBACK(doInput), &game);
@@ -135,7 +135,7 @@ int main(int argc, char *argv[] ) {
 
 	//game container packing
 	gtk_box_pack_start(GTK_BOX(mainVbox), game.game.vbox, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(game.game.vbox), gameCanvas, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(game.game.vbox), game.game.canvas, FALSE, FALSE, 0);
 	//temporary labels
 	gtk_box_pack_start(GTK_BOX(game.game.vbox), game.game.commLabel, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(game.game.vbox), game.game.cardLabel, TRUE, TRUE, 0);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[] ) {
 	gtk_box_pack_start(GTK_BOX(gameHboxBtn), game.game.raiseBtn, TRUE, TRUE, 10);
 
 
-	gtk_widget_show(gameCanvas);
+	gtk_widget_show(game.game.canvas);
 	gtk_widget_show(gameQuit);
 	gtk_widget_show(gameFold);
 	gtk_widget_show(gameCall);
@@ -168,7 +168,7 @@ int main(int argc, char *argv[] ) {
 	gtk_widget_show(mainVbox);
 	gtk_widget_show(window);
 
-	g_timeout_add(7,G_SOURCE_FUNC(updateData), &game);
+	g_timeout_add(1000,G_SOURCE_FUNC(updateData), &game);
 	
 	gtk_main();
 	return 0;
@@ -177,7 +177,7 @@ int main(int argc, char *argv[] ) {
 
 
 gboolean updateData(gpointer data) {
-	if (((Game*)data)->state == GAME) paint(NULL, NULL, data);
+	if (((Game*)data)->state == GAME) paint(GTK_WIDGET(((Game*)data)->game.canvas), NULL, data);
 	/*
 	if (g->state == GAME) {
 		char temp[256];
@@ -371,7 +371,7 @@ static void quitGame(GtkWidget *widget, gpointer data) {
 
 void draw_image(cairo_t *cr, char *img_name, int x, int y, double scale)
 {
-	printf("%s", img_name);
+	//printf("%s", img_name);
 	cairo_surface_t *image = cairo_image_surface_create_from_png(img_name);
 
 	if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)

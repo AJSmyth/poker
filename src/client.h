@@ -16,6 +16,7 @@ typedef struct {
 
 typedef struct {
 	GtkWidget *vbox;
+	GtkWidget *canvas;
 	GtkWidget *mainLabel;
 	GtkWidget *commLabel;
 	GtkWidget *cardLabel;
