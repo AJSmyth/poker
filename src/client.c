@@ -927,83 +927,82 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 GAMESTATE DoGame(GAMESTATE game) {
 	//check player actions
-  
-  int validmove = 1;
-  switch(game.players[game.playerTurn].action){
-    case CALL:
-      if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
-        game.players[game.playerTurn].Bid = game.currCall;
-        game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-        game.pot += game.currCall;
-      }else{
-        validmove = 0;
-      }
-    break;
 
-    case RAISE:
-      game.currCall += game.players[game.playerTurn].raiseAmt;
-      game.players[game.playerTurn].Bid = game.currCall;
-      game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-      game.pot += game.currCall;
-    break;
-    
-    case CHECK:
-      //can do it better by resetting bid & checking if player is at call
-      if(game.players[game.playerTurn].role == SMALLBLIND && game.stage != PREFLOP){
-        game.players[game.playerTurn].Bid = 0;
-        break;
-      }
-      else if(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP) {
-	//bet is set to 0 in setup to avoid premature progression
-        game.players[game.playerTurn].Bid = 10;
+	int validmove = 1;
+	switch(game.players[game.playerTurn].action){
+	case CALL:
+		if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
+	game.players[game.playerTurn].Bid = game.currCall;
+	game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
+	game.pot += game.currCall;
+		}else{
+	validmove = 0;
+		}
 	break;
-      }
-      
-      if (game.currCall == 0) game.players[game.playerTurn].Bid = 0;
-      else if (game.players[game.playerTurn].Bid != game.currCall) validmove = 0;
-    break;
 
-    case FOLD:
-    	validmove = 1;
-	int count;
+	case RAISE:
+		game.currCall += game.players[game.playerTurn].raiseAmt;
+		game.players[game.playerTurn].Bid = game.currCall;
+		game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
+		game.pot += game.currCall;
+	break;
+
+	case CHECK:
+		//can do it better by resetting bid & checking if player is at call
+		if(game.players[game.playerTurn].Bid == game.currCall || (game.players[game.playerTurn].Bid == -1 && game.currCall == 0)){
+		game.players[game.playerTurn].Bid = game.currCall;
+		break;
+		}
+		else validmove = 0;
+	break;
+
+	case FOLD:
+	int count = 0;
 	for (int i = 0; i < game.numberPlayers; i++) {
 		if (game.players[game.numberPlayers].action != FOLD) count++;
 	}
 	if (count == 1) game.stage = WIN;
-    break;
+	break;
 
-    default:
-        validmove = 0;
-    break;
-  }
+	default:
+	validmove = 0;
+	break;
+	}
 
-  //stage change logic
-  if(!(game.players[game.playerTurn].role == SMALLBLIND && game.players[game.playerTurn].action == FOLD) && EQUALBIDS(game) == 1 && validmove == 1){
-    if(game.stage != RIVER){
-      //set all bets to -1 to avoid premature progression
-      for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
+    if(validmove == 1){
+		//stage change logic
+		if(EQUALBIDS(game) == 1 && (game.stage != PREFLOP || (game.stage == PREFLOP && game.players[game.playerTurn].role == BIGBLIND))){
 
-      game.playerTurn = 0;
-      game.currCall = 0;
-      game.stage++;
-    }else{
-      printf("Game over");
-      game.stage = WIN;
-      //end game/restart
-    }
-  }
+			//find first player after smallblind
+			bool foundSB = false;
+			for (int i = 0; i < game.numberPlayers; i++) {
+				//if haven't found small blind, continue searching
+				if (!foundSB) foundSB = (game.players[i].role == SMALLBLIND);
 
-  //turn incrementing logic
-  else {
-	  if(validmove == 1){
-	    while (true) {
-	      if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
-	      else (game.playerTurn = 0);
+				//if small blind or closest unfolded player to sb, make it their turn
+				if (foundSB && game.players[i].action != FOLD) {
+					game.playerTurn = i;
+					break;
+				}
 
-	      if (game.players[game.playerTurn].action != FOLD) break;
-		  }
-	  }
-  }
+				//if the smallblind is the last player and is folded
+				if (game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
+			}
+
+			game.currCall = 0;
+			for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
+			game.stage++;
+		}
+		//turn incrementing logic
+		else {
+			while (true) {
+				if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
+				else (game.playerTurn = 0);
+
+				if (game.players[game.playerTurn].action != FOLD) break;
+				}
+		}
+	}
 
   return game;
 }
