@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include "deck.h"
 #include "game.h"
+#include "net.h"
 #include <fcntl.h>
 
 int player_count = 3;
@@ -84,7 +85,6 @@ void *connection_handler(void *socket_desc)
 	//player id local to thread
 	int local_id;
 	//local game state
-	GAMESTATE local_game;
 	//lock game state initialization code
 	pthread_mutex_lock(&mutex);
 	//begin initial handshake and assign player id
@@ -103,11 +103,11 @@ void *connection_handler(void *socket_desc)
 			close(sock);
 			return 1;
 		}
-		local_game = super_state;
 		player_count = super_state.numberPlayers;
 		puts("Initial game recieved");
 	}
 	pthread_mutex_unlock(&mutex);
+
 	//wait for all players to join
 	bool done = false;
 	while (!done) {
@@ -119,21 +119,33 @@ void *connection_handler(void *socket_desc)
 	}
 
 	//echo game state to all other players
-	//if(local_id != 0){
-	sprintf(out, "Sent player %d the game state.", local_id);
-	puts(out);
-	write(sock , &super_state , sizeof(super_state));
-	local_game = super_state;
-	//}
-	//recieve gamestate and echo
-	fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
+	pthread_mutex_lock(&mutex);
+	if (write(sock , &super_state , sizeof(super_state)) >= 0) {
+		sprintf(out, "Sent player %d the game state.", local_id);
+		puts(out);
+	}
+	pthread_mutex_unlock(&mutex);
+
+	//recieve gamestate request and serve
+	PacketType type;
 	while(1){
-		read(sock , &super_state , sizeof(super_state));
-		if(super_state.playerTurn != local_game.playerTurn || super_state.stage != local_game.stage){
-			sprintf(out, "Updating player %d with the new game state.", local_id);
-			puts(out);
-			write(sock , &super_state , sizeof(super_state));
-			local_game = super_state;
+		read(sock, &type, sizeof(type));
+		sprintf(out, "\nPlayer %d %s", local_id, (type == GS_UPDATE) ? "attempted update" : (type == GS_REQUEST) ? "attempted request" : "unknown action");
+		puts(out);
+		if (type == GS_UPDATE) {
+			pthread_mutex_lock(&mutex);
+			if (read(sock , &super_state , sizeof(super_state)) >= 0) {
+				sprintf(out, "\nUpdating gamestate from player %d.", local_id);
+				puts(out);
+			}
+			pthread_mutex_unlock(&mutex);
+		} else if (type == GS_REQUEST) {
+			pthread_mutex_lock(&mutex);
+			if (write(sock, &super_state, sizeof(super_state)) >= 0) {
+				sprintf(out, "\nSending gamestate to player %d.", local_id);
+				puts(out);
+			}
+			pthread_mutex_unlock(&mutex);
 		}
 	}
     return 0;

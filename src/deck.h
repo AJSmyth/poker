@@ -11,7 +11,7 @@ typedef enum{ // 4 suits in a deck of cards
 }SUIT;
 
 typedef enum{ //Face cards are assigned value for assignment purposes
- ACE = 1,
+ ACE = 14,
  JACK = 11,
  QUEEN = 12,
  KING = 13
@@ -32,11 +32,11 @@ typedef enum{
 }ROLE;
 
 typedef enum{
- FOLD,
- CALL,
- CHECK,
- RAISE,
- NoAction
+ FOLD = 200,
+ CALL = 201,
+ CHECK = 202,
+ RAISE = 203,
+ NoAction = 204
 }ACTIONS;
 
 typedef struct{ //CARD is a struct with variables of a unique suit and rank

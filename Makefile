@@ -5,4 +5,7 @@ DESTDIR = bin
 
 main:
 	gcc src/client.c src/deck.c src/game.c -o bin/poker $(CFLAGS) $(LIBS)
-	gcc -std=c11 -pthread src/server.c src/game.c src/deck.c -o bin/server
+	gcc -std=c11 -pthread -g src/server.c src/game.c src/deck.c -o bin/server
+
+net:
+	gcc src/net.c src/deck.c src/game.c -o net -g	
