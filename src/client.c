@@ -3,6 +3,7 @@
 #include "deck.h"
 #include "game.h"
 #include <string.h>
+#include <time.h>
 #include <stdlib.h>
 //socket stuff
 #include <sys/socket.h>	//socket
@@ -21,7 +22,7 @@ char *RankStr(RANK r);
 
 static void startGame(GtkWidget *widget, gpointer data);
 static void doInput(GtkWidget *widget, gpointer data);
-static void updateData(GtkWidget *widget, gpointer data);
+gboolean updateData(gpointer data);
 static void quitGame(GtkWidget *widget, gpointer data);
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
 
@@ -45,15 +46,6 @@ int main(int argc, char *argv[] ) {
 	gs.shuffleDeck = ShuffleCards (deck);
 	gs.GameCount = 0;
 	gs.stage = PREFLOP;
-	gs.numberPlayers = 5;
-
-	for (int i = 0; i < gs.numberPlayers; i++) {
-		gs.players[i].online = true;
-		gs.players[i].Balance = STARTING_BALANCE;
-	}
-
-  	gs = AssignCards(gs);
-	game.gs = gs;
 
 	//initialize other game variables
 	GtkWidget *window;
@@ -81,7 +73,7 @@ int main(int argc, char *argv[] ) {
 	game.menu.vbox = gtk_vbox_new(FALSE, 1);
 	GtkWidget *menuHbox = gtk_hbox_new(FALSE, 1);
 
-	gtk_entry_set_text(GTK_ENTRY(game.menu.server), "128.200.85.17:9000");
+	gtk_entry_set_text(GTK_ENTRY(game.menu.server), "127.0.0.1:9000");
 
 	//menu signals
 	g_signal_connect(G_OBJECT(menuStartBtn), "clicked", G_CALLBACK(startGame), &game);
@@ -167,18 +159,18 @@ int main(int argc, char *argv[] ) {
 
 	gtk_widget_show(mainVbox);
 	gtk_widget_show(window);
+
+	g_timeout_add(7,G_SOURCE_FUNC(updateData), &game);
 	
-	updateData(NULL, &game);
 	gtk_main();
 	return 0;
 }
 
 
 
-void updateData(GtkWidget *widget, gpointer data) {
+gboolean updateData(gpointer data) {
 	Game *g = data;
 	GAMESTATE game = g->gs;
-	
 	if (g->state == GAME) {
 		char temp[256];
 		//update stats 
@@ -199,6 +191,7 @@ void updateData(GtkWidget *widget, gpointer data) {
 		CARD c1 = game.players[g->ID].card1, c2 = game.players[g->ID].card2;
 		sprintf(temp, "Player %d's cards: %s of %s, %s of %s", g->ID + 1, RankStr(c1.rank), SuitStr(c1.suit), RankStr(c2.rank), SuitStr(c2.suit));
 	}
+	return 69420;
 }
 
 
@@ -208,7 +201,6 @@ void doInput(GtkWidget *widget, gpointer data) {
 	GAMESTATE game = g->gs;
 	
 	if (game.playerTurn == g->ID) {
-	updateData(NULL, data);
 		if (game.stage != WIN) {	
 			//put data into gamestate struct
 			if (!strcmp(gtk_button_get_label(GTK_BUTTON(widget)), "Fold")) {
@@ -238,9 +230,9 @@ void doInput(GtkWidget *widget, gpointer data) {
 			}
 			//if valid move hide the error message
 			else {
-				PacketType update = {1};
+				PacketType update = GS_UPDATE;
 				write(g->fd, &update, sizeof(update));
-				write(g->fd, &game, sizeof(game));
+				write(g->fd, &g->gs, sizeof(g->gs));
 				gtk_widget_hide(g->game.mainLabel);
 			}
 		}
@@ -254,7 +246,6 @@ void doInput(GtkWidget *widget, gpointer data) {
 		gtk_label_set_text(GTK_LABEL(g->game.mainLabel), "Not your move!");
 		gtk_widget_show(g->game.mainLabel);
 	}
-	updateData(NULL, data);
 } 
 
 
@@ -338,7 +329,7 @@ static void startGame(GtkWidget *widget, gpointer data) {
 	gtk_widget_show(g->game.vbox);
 	g->state = GAME;
 	pthread_t thread; 
-	if( pthread_create( thread, NULL ,  connection_handler , (void*) &g) < 0)
+	if (pthread_create(&thread, NULL , connection_handler, data) < 0)
 	{
 		perror("could not create thread");
 	}
@@ -348,10 +339,14 @@ void *connection_handler(void *game)
 {
 	Game* g = (Game*)game;
 	int sock = g->fd;
-	PacketType request = {2};
+	PacketType request = GS_REQUEST;
+	struct timespec tim, tim2;
+	tim.tv_sec = 0;
+	tim.tv_nsec = 100000000L;
 	while(1){
 		write(sock, &request, sizeof(request));
-		read(sock, &(g->gs), sizeof(g->gs));
+		read(sock, &g->gs, sizeof(g->gs));
+		nanosleep(&tim, &tim2);
 	}
 }
 
