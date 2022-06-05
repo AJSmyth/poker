@@ -178,7 +178,7 @@ int main(int argc, char *argv[] ) {
 
 gboolean updateData(gpointer data) {
 	Game *g = data;
-	if (g->state == GAME && g->gs.playerTurn != g->oldgs.playerTurn && g->gs.stage != g->oldgs.stage) {
+	if (g->state == GAME && (g->gs.playerTurn != g->oldgs.playerTurn || g->gs.stage != g->oldgs.stage)) {
 		paint(GTK_WIDGET(g->game.canvas), NULL, data);
 		g->oldgs = g->gs;
 	}
@@ -353,7 +353,7 @@ void *connection_handler(void *game)
 	PacketType request = GS_REQUEST;
 	struct timespec tim, tim2;
 	tim.tv_sec = 0;
-	tim.tv_nsec = 500000000L;
+	tim.tv_nsec = 100000000L;
 	while(1){
 		write(sock, &request, sizeof(request));
 		read(sock, &g->gs, sizeof(g->gs));
@@ -483,7 +483,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	{
 
 	case 0:
-
+		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
@@ -526,11 +526,11 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 		int spacing = 0;
 		// the rest of the players (hidden)
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (game.numberPlayers * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
 				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
@@ -545,7 +545,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 					cairo_stroke(cr);
 				}
 
-				if (game.players[g->ID].action == FOLD)
+				if (game.players[i].action == FOLD)
 				{
 					// shadow cards when user folds
 					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
@@ -567,10 +567,11 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 				spacing = 1;
 			}
 		}
+		}
 		break;
 
 	case 1:
-
+		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
@@ -618,11 +619,12 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
+		int spacing = 0;
 		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (game.numberPlayers * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
 				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
@@ -659,10 +661,11 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 				spacing = 1;
 			}
 		}
+		}
 		break;
 
 	case 2:
-
+		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
@@ -709,6 +712,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
+		int spacing = 0;
 		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
@@ -750,11 +754,11 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 				spacing = 1;
 			}
 		}
-
+		}
 		break;
 
 	case 3:
-
+		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
@@ -795,6 +799,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
+		int spacing = 0;
 		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
@@ -836,11 +841,11 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 				spacing = 1;
 			}
 		}
-
+		}
 		break;
 
 	case -1:
-
+		{
 		sprintf(buffer, "%s is the winner!", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
@@ -871,6 +876,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
+		int spacing = 0;
 		// the rest of the players(reveal their cards)
 		for (int i = 0; i < game.numberPlayers; i++)
 		{
@@ -913,13 +919,14 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 				spacing = 1;
 			}
 		}
+		}
 	}
 
 	cairo_destroy(cr);
 }
 
 GAMESTATE DoGame(GAMESTATE game) {
-  //check player actions
+	//check player actions
   
   int validmove = 1;
   switch(game.players[game.playerTurn].action){
