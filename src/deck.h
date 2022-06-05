@@ -22,7 +22,7 @@ typedef enum{
  FLOP = 1,
  TURN = 2,
  RIVER = 3,
- WIN = -1
+ WIN = 4
 }STAGES;
 
 typedef enum{

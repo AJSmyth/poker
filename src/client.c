@@ -479,10 +479,9 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	GAMESTATE game = g->gs;
 
 	char buffer[100];
-	switch (StageNum(game.stage))
-	{
+	switch (game.stage) {
 
-	case 0:
+	case PREFLOP:
 		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
@@ -570,7 +569,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		}
 		break;
 
-	case 1:
+	case FLOP:
 		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
@@ -664,7 +663,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		}
 		break;
 
-	case 2:
+	case TURN:
 		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
@@ -757,7 +756,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		}
 		break;
 
-	case 3:
+	case RIVER:
 		{
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
@@ -844,11 +843,16 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		}
 		break;
 
-	case -1:
+	case WIN:
 		{
 		sprintf(buffer, "%s is the winner!", StageStr(game.stage));
 		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
+		// community deck (5 revealing)
+		for (int i = 0; i <= 4; i++)
+		{
+			draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
+		}
 
 		//Draw pot
 		sprintf(buffer, "Pot: $%d", game.pot);
@@ -856,6 +860,10 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		//Draw current call
 		sprintf(buffer, "Current Call: $%d", game.currCall);
 		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+
+		// your own hand!
+		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
+		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
 
 		// highlight cards if its player's turn
 		if ((game.playerTurn == g->ID) && game.players[g->ID].action != FOLD)
@@ -927,7 +935,6 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 GAMESTATE DoGame(GAMESTATE game) {
 	//check player actions
-
 	int validmove = 1;
 	switch(game.players[game.playerTurn].action){
 	case CALL:
@@ -969,40 +976,43 @@ GAMESTATE DoGame(GAMESTATE game) {
 	break;
 	}
 
-    if(validmove == 1){
-		//stage change logic
-		if(EQUALBIDS(game) == 1 && (game.stage != PREFLOP || (game.stage == PREFLOP && game.players[game.playerTurn].role == BIGBLIND))){
+	if (nUnfolded(game) != 1) {
+	    if(validmove == 1){
+			//stage change logic
+			if(EQUALBIDS(game) == 1 && (game.stage != PREFLOP || (game.stage == PREFLOP && game.players[game.playerTurn].role == BIGBLIND))){
 
-			//find first player after smallblind
-			bool foundSB = false;
-			for (int i = 0; i < game.numberPlayers; i++) {
-				//if haven't found small blind, continue searching
-				if (!foundSB) foundSB = (game.players[i].role == SMALLBLIND);
+				//find first player after smallblind
+				bool foundSB = false;
+				for (int i = 0; i < game.numberPlayers; i++) {
+					//if haven't found small blind, continue searching
+					if (!foundSB) foundSB = (game.players[i].role == SMALLBLIND);
 
-				//if small blind or closest unfolded player to sb, make it their turn
-				if (foundSB && game.players[i].action != FOLD) {
-					game.playerTurn = i;
-					break;
+					//if small blind or closest unfolded player to sb, make it their turn
+					if (foundSB && game.players[i].action != FOLD) {
+						game.playerTurn = i;
+						break;
+					}
+
+					//if the smallblind is the last player and is folded
+					if (game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
 				}
 
-				//if the smallblind is the last player and is folded
-				if (game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
+				game.currCall = 0;
+				for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
+				game.stage++;
 			}
+			//turn incrementing logic
+			else {
+				while (true) {
+					if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
+					else (game.playerTurn = 0);
 
-			game.currCall = 0;
-			for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
-			game.stage++;
-		}
-		//turn incrementing logic
-		else {
-			while (true) {
-				if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
-				else (game.playerTurn = 0);
-
-				if (game.players[game.playerTurn].action != FOLD) break;
-				}
+					if (game.players[game.playerTurn].action != FOLD) break;
+					}
+			}
 		}
 	}
+	else game.stage = WIN;
 
   return game;
 }
@@ -1017,6 +1027,8 @@ char *StageStr(STAGES s) {
 		return "turn";
 		case RIVER:
 		return "river";
+		case WIN:
+		return "game over";
 		default:
 		return "undefined stage!";
 	}
@@ -1063,7 +1075,7 @@ int StageNum(STAGES s)
 	case RIVER:
 		return 3;
 	case WIN:
-		return -1;
+		return 4;
 	default:
 		return -2;
 	}

@@ -6,6 +6,7 @@
 GAMESTATE PREFLOP1(GAMESTATE game); //Bidding in PreFlop
 GAMESTATE FLOP1(GAMESTATE game);
 int EQUALBIDS(GAMESTATE game); //Checking if all bids are equal to proceed further
+int nUnfolded(GAMESTATE game);
 
 void swap(int *a, int *b);
 void randomSwap(int arr[], int n);
