@@ -167,8 +167,8 @@ int main(int argc, char *argv[] ) {
 
 	gtk_widget_show(mainVbox);
 	gtk_widget_show(window);
-
-	g_timeout_add(1000,G_SOURCE_FUNC(updateData), &game);
+	
+	g_timeout_add(100,G_SOURCE_FUNC(updateData), &game);
 	
 	gtk_main();
 	return 0;
@@ -177,7 +177,11 @@ int main(int argc, char *argv[] ) {
 
 
 gboolean updateData(gpointer data) {
-	if (((Game*)data)->state == GAME) paint(GTK_WIDGET(((Game*)data)->game.canvas), NULL, data);
+	Game *g = data;
+	if (g->state == GAME && g->gs.playerTurn != g->oldgs.playerTurn && g->gs.stage != g->oldgs.stage) {
+		paint(GTK_WIDGET(g->game.canvas), NULL, data);
+		g->oldgs = g->gs;
+	}
 	/*
 	if (g->state == GAME) {
 		char temp[256];
@@ -303,8 +307,6 @@ static void startGame(GtkWidget *widget, gpointer data) {
 	if(g->ID == 0){
 		GAMESTATE game;
 		DECK deck = INIT();
-		
-		//fill the player array with empty, offline players
 		CARD nullCard = {-1,-1};
 		PLAYER emptyPlayer = {-1, -1, 0, nullCard, nullCard, NoAction, NORMAL, 0, false};
 		for (int i = 0; i < 9; i++) {
@@ -351,7 +353,7 @@ void *connection_handler(void *game)
 	PacketType request = GS_REQUEST;
 	struct timespec tim, tim2;
 	tim.tv_sec = 0;
-	tim.tv_nsec = 100000000L;
+	tim.tv_nsec = 500000000L;
 	while(1){
 		write(sock, &request, sizeof(request));
 		read(sock, &g->gs, sizeof(g->gs));
@@ -409,28 +411,28 @@ void draw_cards(cairo_t *cr, CARD card, int x, int y, double scale)
 	case (0):
 		sprintf(buffer, "../assets/%s_of_diamonds.png", RankStr(card.rank));
 		draw_image(cr, buffer, x, y, scale);
-		printf("%s", buffer);
+		//printf("%s", buffer);
 		memset(buffer, 0, 100);
 		break;
 
 	case (1):
 		sprintf(buffer, "../assets/%s_of_clubs.png", RankStr(card.rank));
 		draw_image(cr, buffer, x, y, scale);
-		printf("%s", buffer);
+		//printf("%s", buffer);
 		memset(buffer, 0, 100);
 		break;
 
 	case (2):
 		sprintf(buffer, "../assets/%s_of_hearts.png", RankStr(card.rank));
 		draw_image(cr, buffer, x, y, scale);
-		printf("%s", buffer);
+		//printf("%s", buffer);
 		memset(buffer, 0, 100);
 		break;
 
 	case (3):
 		sprintf(buffer, "../assets/%s_of_spades.png", RankStr(card.rank));
 		draw_image(cr, buffer, x, y, scale);
-		printf("%s", buffer);
+		//printf("%s", buffer);
 		memset(buffer, 0, 100);
 	}
 }
@@ -441,7 +443,7 @@ void draw_text(cairo_t *cr, char *text, double x, double y, double size)
 	cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
 						   CAIRO_FONT_WEIGHT_BOLD);
 	cairo_set_font_size(cr, size);
-	printf("%s\n", text);
+	//printf("%s\n", text);
 	cairo_move_to(cr, x, y);
 	cairo_show_text(cr, text);
 }
@@ -452,7 +454,7 @@ void draw_title(cairo_t *cr, char *text, double x, double y, double size)
 	cairo_select_font_face(cr, "Apple Chancery", CAIRO_FONT_SLANT_NORMAL,
 						   CAIRO_FONT_WEIGHT_BOLD);
 	cairo_set_font_size(cr, size);
-	printf("%s\n", text);
+	//printf("%s\n", text);
 	cairo_move_to(cr, x, y);
 	cairo_show_text(cr, text);
 }

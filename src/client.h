@@ -29,6 +29,7 @@ typedef struct {
 	MenuObjects menu;
 	GameObjects game;
 	GAMESTATE gs;
+	GAMESTATE oldgs;
 	int fd;
 
 	int ID;
