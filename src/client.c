@@ -396,7 +396,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	case 0:
 
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
-		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
 
 		// community deck (hidden)
@@ -405,10 +405,26 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			draw_image(cr, "../assets/card_back.png", ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
 		}
 
-		// your own hand!
+		//Draw pot
+		sprintf(buffer, "Pot: $%d", game.pot);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		//Draw current call
+		sprintf(buffer, "Current Call: $%d", game.currCall);
+		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
 
+		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
 		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+		// highlight cards if its player's turn
+		if ((game.playerTurn == g->ID) && game.players[g->ID].action != FOLD)
+		{
+			cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_set_line_width(cr, 2.5);
+			cairo_stroke(cr);
+		}
 
 		if (game.players[g->ID].action == FOLD)
 		{
@@ -425,10 +441,20 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
 				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+
+				// highlight cards if its player's turn
+				if ((game.playerTurn == i) && game.players[i].action != FOLD)
+				{
+					cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_set_line_width(cr, 2.5);
+					cairo_stroke(cr);
+				}
 
 				if (game.players[g->ID].action == FOLD)
 				{
@@ -439,8 +465,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 					cairo_fill(cr);
 				}
 
-				sprintf(buffer, "id:%d", game.players[i].ID);
-				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+				//display player attributes
+				sprintf(buffer, "Id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 12.5);
+				sprintf(buffer, "Balance:");
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.95), 12.5);
+				sprintf(buffer, "$%d", game.players[i].Balance);
+				draw_text(cr, buffer, cardpos, (CARD_H * 1.15), 12.5);
 			}
 			else
 			{
@@ -452,7 +483,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	case 1:
 
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
-		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
 
 		// community deck (3 revealing)
@@ -468,9 +499,27 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			}
 		}
 
+		//Draw pot
+		sprintf(buffer, "Pot: $%d", game.pot);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		//Draw current call
+		sprintf(buffer, "Current Call: $%d", game.currCall);
+		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
 		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+		// highlight cards if its player's turn
+		if ((game.playerTurn == g->ID) && game.players[g->ID].action != FOLD)
+		{
+			cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_set_line_width(cr, 2.5);
+			cairo_stroke(cr);
+		}
+
 		if (game.players[g->ID].action == FOLD)
 		{
 			// shadow cards when user folds
@@ -480,16 +529,26 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
 				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+				
+				// highlight cards if its player's turn
+				if ((game.playerTurn == i) && game.players[i].action != FOLD)
+				{
+					cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_set_line_width(cr, 2.5);
+					cairo_stroke(cr);
+				}
 
-				if (game.players[g->ID].action == FOLD)
+				if (game.players[i].action == FOLD)
 				{
 					// shadow cards when user folds
 					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
@@ -498,8 +557,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 					cairo_fill(cr);
 				}
 
-				sprintf(buffer, "id:%d", game.players[i].ID);
-				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+				//display player attributes
+				sprintf(buffer, "Id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 12.5);
+				sprintf(buffer, "Balance:");
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.95), 12.5);
+				sprintf(buffer, "$%d", game.players[i].Balance);
+				draw_text(cr, buffer, cardpos, (CARD_H * 1.15), 12.5);
 			}
 			else
 			{
@@ -511,7 +575,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	case 2:
 
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
-		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
 		// community deck (4 revealing)
 		for (int i = 0; i <= 4; i++)
@@ -525,9 +589,27 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 				draw_image(cr, "../assets/card_back.png", ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
 			}
 		}
+
+		//Draw pot
+		sprintf(buffer, "Pot: $%d", game.pot);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		//Draw current call
+		sprintf(buffer, "Current Call: $%d", game.currCall);
+		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
 		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+		// highlight cards if its player's turn
+		if ((game.playerTurn == g->ID) && game.players[g->ID].action != FOLD)
+		{
+			cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_set_line_width(cr, 2.5);
+			cairo_stroke(cr);
+		}
 
 		if (game.players[g->ID].action == FOLD)
 		{
@@ -538,16 +620,26 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
 				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
+				
+				// highlight cards if its player's turn
+				if ((game.playerTurn == i) && game.players[i].action != FOLD)
+				{
+					cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_set_line_width(cr, 2.5);
+					cairo_stroke(cr);
+				}
 
-				if (game.players[g->ID].action == FOLD)
+				if (game.players[i].action == FOLD)
 				{
 					// shadow cards when user folds
 					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
@@ -556,8 +648,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 					cairo_fill(cr);
 				}
 
-				sprintf(buffer, "id:%d", game.players[i].ID);
-				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+				//display player attributes
+				sprintf(buffer, "Id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 12.5);
+				sprintf(buffer, "Balance:");
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.95), 12.5);
+				sprintf(buffer, "$%d", game.players[i].Balance);
+				draw_text(cr, buffer, cardpos, (CARD_H * 1.15), 12.5);
 			}
 			else
 			{
@@ -570,16 +667,35 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	case 3:
 
 		sprintf(buffer, "Stage: %s", StageStr(game.stage));
-		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
 		// community deck (5 revealing)
 		for (int i = 0; i <= 4; i++)
 		{
 			draw_cards(cr, game.communityCards.cards[i], ((width - CARD_W) / 2 + i * (CARD_W)) - 4 * (CARD_W / 2), (height - CARD_H) / 2, 0.1);
 		}
+
+		//Draw pot
+		sprintf(buffer, "Pot: $%d", game.pot);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		//Draw current call
+		sprintf(buffer, "Current Call: $%d", game.currCall);
+		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
 		draw_cards(cr, game.players[g->ID].card2, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), 0.1);
+
+
+		// highlight cards if its player's turn
+		if ((game.playerTurn == g->ID) && game.players[g->ID].action != FOLD)
+		{
+			cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_set_line_width(cr, 2.5);
+			cairo_stroke(cr);
+		}
 
 		if (game.players[g->ID].action == FOLD)
 		{
@@ -590,16 +706,26 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			cairo_fill(cr);
 		}
 
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < game.numberPlayers; i++)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_image(cr, "../assets/card_back.png", cardpos, 0, 0.05);
 				draw_image(cr, "../assets/card_back.png", cardpos + (CARD_W * 0.5), 0, 0.05);
 
-				if (game.players[g->ID].action == FOLD)
+				// highlight cards if its player's turn
+				if ((game.playerTurn == i) && game.players[i].action != FOLD)
+				{
+					cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_set_line_width(cr, 2.5);
+					cairo_stroke(cr);
+				}
+
+				if (game.players[i].action == FOLD)
 				{
 					// shadow cards when user folds
 					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
@@ -608,8 +734,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 					cairo_fill(cr);
 				}
 
-				sprintf(buffer, "id:%d", game.players[i].ID);
-				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+				//display player attributes
+				sprintf(buffer, "Id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 12.5);
+				sprintf(buffer, "Balance:");
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.95), 12.5);
+				sprintf(buffer, "$%d", game.players[i].Balance);
+				draw_text(cr, buffer, cardpos, (CARD_H * 1.15), 12.5);
 			}
 			else
 			{
@@ -622,8 +753,25 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	case -1:
 
 		sprintf(buffer, "%s is the winner!", StageStr(game.stage));
-		draw_title(cr, buffer, ((width) / 2) - 4 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
+
+		//Draw pot
+		sprintf(buffer, "Pot: $%d", game.pot);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		//Draw current call
+		sprintf(buffer, "Current Call: $%d", game.currCall);
+		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+
+		// highlight cards if its player's turn
+		if ((game.playerTurn == g->ID) && game.players[g->ID].action != FOLD)
+		{
+			cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), CARD_W, CARD_H);
+			cairo_rectangle(cr, ((width - CARD_W) / 2 - (CARD_W / 2)) + CARD_W, (height - CARD_H), CARD_W, CARD_H);
+			cairo_set_line_width(cr, 2.5);
+			cairo_stroke(cr);
+		}
 
 		if (game.players[g->ID].action == FOLD)
 		{
@@ -639,12 +787,22 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		{
 			if (i != g->ID)
 			{
-				int cardpos = 0 + (3 * (i-spacing)) * (CARD_W * 0.5);
+				int cardpos = 0 + (3 * (i - spacing)) * (CARD_W * 0.5);
 
 				draw_cards(cr, game.players[g->ID].card1, cardpos, 0, 0.05);
 				draw_cards(cr, game.players[g->ID].card2, cardpos + (0.5 * CARD_W), 0, 0.05);
 
-				if (game.players[g->ID].action == FOLD)
+				// highlight cards if its player's turn
+				if ((game.playerTurn == i) && game.players[i].action != FOLD)
+				{
+					cairo_set_source_rgba(cr, 1.0, 1.0, 0.0, 1);
+					cairo_rectangle(cr, cardpos, 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_rectangle(cr, cardpos + (CARD_W * 0.5), 0, CARD_W * 0.5, CARD_H * 0.5);
+					cairo_set_line_width(cr, 2.5);
+					cairo_stroke(cr);
+				}
+
+				if (game.players[i].action == FOLD)
 				{
 					// shadow cards when user folds
 					cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
@@ -653,8 +811,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 					cairo_fill(cr);
 				}
 
-				sprintf(buffer, "id:%d", game.players[i].ID);
-				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 15);
+				//display player attributes
+				sprintf(buffer, "Id:%d", game.players[i].ID);
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.75), 12.5);
+				sprintf(buffer, "Balance:");
+				draw_text(cr, buffer, cardpos, (CARD_H * 0.95), 12.5);
+				sprintf(buffer, "$%d", game.players[i].Balance);
+				draw_text(cr, buffer, cardpos, (CARD_H * 1.15), 12.5);
 			}
 			else
 			{
@@ -662,7 +825,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 			}
 		}
 	}
-	
+
 	cairo_destroy(cr);
 }
 
