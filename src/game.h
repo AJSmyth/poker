@@ -9,4 +9,9 @@ int EQUALBIDS(GAMESTATE game); //Checking if all bids are equal to proceed furth
 
 void swap(int *a, int *b);
 void randomSwap(int arr[], int n);
+
+typedef enum{
+    GS_UPDATE = 1,
+    GS_REQUEST = 2
+}PacketType;
 #endif

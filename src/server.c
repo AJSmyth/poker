@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include "deck.h"
 #include "game.h"
-#include "net.h"
+//#include "net.h"
 #include <fcntl.h>
 
 int player_count = 3;
@@ -66,7 +66,7 @@ int main(int argc , char *argv[])
         if( pthread_create( thread+i, NULL ,  connection_handler , (void*) &client_sock) < 0)
         {
             perror("could not create thread");
-            return 1;
+			return 1;
         }
 		i++;
 	}

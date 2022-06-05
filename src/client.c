@@ -8,6 +8,7 @@
 #include <sys/socket.h>	//socket
 #include <arpa/inet.h>	//inet_addr
 #include <unistd.h>
+#include <pthread.h>
 
 const int STARTING_BALANCE = 500;
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
@@ -23,6 +24,8 @@ static void doInput(GtkWidget *widget, gpointer data);
 static void updateData(GtkWidget *widget, gpointer data);
 static void quitGame(GtkWidget *widget, gpointer data);
 static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data);
+
+void *connection_handler(void *game);
 
 
 int main(int argc, char *argv[] ) {
@@ -235,6 +238,8 @@ void doInput(GtkWidget *widget, gpointer data) {
 			}
 			//if valid move hide the error message
 			else {
+				PacketType update = {1};
+				write(g->fd, &update, sizeof(update));
 				write(g->fd, &game, sizeof(game));
 				gtk_widget_hide(g->game.mainLabel);
 			}
@@ -332,6 +337,22 @@ static void startGame(GtkWidget *widget, gpointer data) {
 	gtk_widget_hide(g->menu.vbox);
 	gtk_widget_show(g->game.vbox);
 	g->state = GAME;
+	pthread_t thread; 
+	if( pthread_create( thread, NULL ,  connection_handler , (void*) &g) < 0)
+	{
+		perror("could not create thread");
+	}
+}
+
+void *connection_handler(void *game)
+{
+	Game* g = (Game*)game;
+	int sock = g->fd;
+	PacketType request = {2};
+	while(1){
+		write(sock, &request, sizeof(request));
+		read(sock, &(g->gs), sizeof(g->gs));
+	}
 }
 
 
