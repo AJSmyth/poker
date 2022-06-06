@@ -849,7 +849,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 		int weiner = findWeiner(game);
 		if (weiner == g->ID) sprintf(buffer, "You are the winner!");
 		else if (weiner != -1) sprintf(buffer, "Player %d is the winner!", weiner);
-		else sprintf(buffer, "Tied between playersimplent this later plz");
+		else sprintf(buffer, "Tied between players");
 		
 		draw_title(cr, buffer, ((width) / 2) - 3.0 * (CARD_W), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
@@ -1014,28 +1014,29 @@ GAMESTATE DoGame(Game *g) {
 						}
 
 						//if the smallblind is the last player and is folded
-						if (game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
+						if (foundSB && game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
 					}
 
 					game.currCall = 0;
 
 					if (++game.stage == WIN) {
-						//find first online player and task them with setting up game
-						int first;
-						for (first = 0; first < game.numberPlayers; first++) if (game.players[first].online) break;
+						g->gs = game;
+						PacketType update = GS_UPDATE;
+						write(g->fd, &update, sizeof(update));
+						write(g->fd, &g->gs, sizeof(g->gs));
+
 						GAMESTATE localgs = g->gs;
+						localgs = TieBreaker(localgs);
 						localgs.GameCount++;
+						localgs = AssignCards(localgs);
 						localgs.shuffleDeck = ShuffleCards(INIT());
 						localgs.stage = PREFLOP;
-						localgs = AssignCards(localgs);
 
-						localgs = TieBreaker(localgs);
 						
-						updateData(g);
-						PacketType update = GS_UPDATE;
+						sleep(1);
+						update = GS_UPDATE;
 						if (write(g->fd, &update, sizeof(update)) < 0) perror("First write");
 						if (write(g->fd, &localgs, sizeof(localgs)) < 0) perror("Second write");
-						puts("FSDF");
 					}
 					else {
 						g->gs = game;

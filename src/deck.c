@@ -60,6 +60,8 @@ GAMESTATE AssignCards (GAMESTATE game)
     
     if (game.GameCount == 0)
     {
+	if (game.numberPlayers > 2) game.playerTurn = 2;
+	else game.playerTurn = 0;
         game.players[0].role = SMALLBLIND; //Assigning small blind to game.players[0]
         game.players[0].Bid = 5; //Assigning default bid on small blind
         game.players[0].Balance = game.players[0].Balance - 5;//they have lost their starting bid
@@ -80,24 +82,32 @@ GAMESTATE AssignCards (GAMESTATE game)
         {                             //default bids on binds, at the start of the round   
             if(game.players[a].role == SMALLBLIND){
                 game.players[a].role = NORMAL;
-                if(a+1<game.numberPlayers){
+                if(a+1 <game.numberPlayers){
                     game.players[a+1].role = SMALLBLIND; 
                     game.players[a+1].Balance = game.players[a+1].Balance - 5; 
                     game.players[a+1].Bid = 5;
+		    game.playerTurn = a+1;
                     if(a+2<game.numberPlayers){
                         game.players[a+2].role = BIGBLIND; 
                         game.players[a+2].Balance = game.players[a+2].Balance - 10; 
-			game.players[a+1].Bid = 10;
+			game.players[a+2].Bid = 10;
+			if (a + 3 < game.numberPlayers) game.playerTurn = a + 3;
+			else game.playerTurn = 0;
                     }else{
-                        game.players[1].role = BIGBLIND;
-                        game.players[1].Balance = game.players[1].Balance - 10;
-			game.players[1].Bid = 10;
+                        game.players[0].role = BIGBLIND;
+                        game.players[0].Balance = game.players[1].Balance - 10;
+			game.players[0].Bid = 10;
+			game.playerTurn = 1;
                     }
                 }else{
                     game.players[0].role = SMALLBLIND;
                     game.players[0].Balance = game.players[0].Balance - 5; 
+		    game.players[0].Bid = 5;
                     game.players[1].role = BIGBLIND;
                     game.players[1].Balance = game.players[1].Balance - 10; 
+		    game.players[1].Bid = 10;
+		    if (game.numberPlayers > 2) game.playerTurn = 2;
+		    else game.playerTurn = 0;
                 }
                 break;
             }
@@ -105,8 +115,6 @@ GAMESTATE AssignCards (GAMESTATE game)
         game.pot=15;
     }
     game.currCall = 10;
-    if (game.numberPlayers != 2) game.playerTurn = 2;
-    else game.playerTurn = 0;
 
     return game;
 }
