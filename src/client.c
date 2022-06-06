@@ -17,7 +17,7 @@ const int CARD_H = 73;
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data);
 static void destroy(GtkWidget *widget, gpointer data);
 
-GAMESTATE DoGame(GAMESTATE game);
+GAMESTATE DoGame(Game *g);
 char *StageStr(STAGES s);
 char *SuitStr(SUIT s);
 char *RankStr(RANK r);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[] ) {
 	GtkWidget *serverLabel = gtk_label_new("Join");
 	GtkWidget *playersLabel = gtk_label_new("Number of Players");
 	game.menu.server = gtk_entry_new_with_max_length(24);
-	GtkAdjustment *menuPlayers = GTK_ADJUSTMENT(gtk_adjustment_new(2,1,9,1,5,0));
+	GtkAdjustment *menuPlayers = GTK_ADJUSTMENT(gtk_adjustment_new(2,2,9,1,5,0));
 	game.menu.playerBtn = gtk_spin_button_new(menuPlayers, 0.0, 0);
 	game.menu.vbox = gtk_vbox_new(FALSE, 1);
 	GtkWidget *menuHbox = gtk_hbox_new(FALSE, 1);
@@ -118,7 +118,7 @@ int main(int argc, char *argv[] ) {
 	game.game.cardLabel = gtk_label_new("Community Cards: hidden");
 	game.game.playerLabel = gtk_label_new("Player Cards: n/a");
 	//temporary labels
-	GtkAdjustment *gameBetAdj = GTK_ADJUSTMENT(gtk_adjustment_new(1,0,1000,1,5,0));
+	GtkAdjustment *gameBetAdj = GTK_ADJUSTMENT(gtk_adjustment_new(1,1,1000,1,5,0));
 	game.game.raiseBtn = gtk_spin_button_new(gameBetAdj, 0.1, 0);
 	game.game.vbox = gtk_vbox_new(FALSE, 1);
 	game.game.mainLabel = gtk_label_new("Ur move dumbass");
@@ -182,28 +182,6 @@ gboolean updateData(gpointer data) {
 		paint(GTK_WIDGET(g->game.canvas), NULL, data);
 		g->oldgs = g->gs;
 	}
-	/*
-	if (g->state == GAME) {
-		char temp[256];
-		//update stats 
-		sprintf(temp, "| Pot: $%d | === | Call: $%d | === | %s | === | Player %d |", game.pot, game.currCall, StageStr(game.stage), game.playerTurn + 1);
-		gtk_label_set_text(GTK_LABEL(g->game.commLabel), temp);
-
-		//update community cards
-		if (game.stage > PREFLOP) {
-			DECK cc = game.communityCards;
-			sprintf(temp, "Community Cards: %s of %s", RankStr(cc.cards[0].rank), SuitStr(cc.cards[1].suit));
-
-			for (int i = 1; i < 2 + (game.stage - PREFLOP); i++) sprintf(temp + strlen(temp), ", %s of %s", RankStr(cc.cards[i].rank), SuitStr(cc.cards[i].suit));
-			gtk_label_set_text(GTK_LABEL(g->game.cardLabel), temp);
-		}
-		else gtk_label_set_text(GTK_LABEL(g->game.cardLabel), "Community Cards: hidden");
-
-		//update player cards
-		CARD c1 = game.players[g->ID].card1, c2 = game.players[g->ID].card2;
-		sprintf(temp, "Player %d's cards: %s of %s, %s of %s", g->ID + 1, RankStr(c1.rank), SuitStr(c1.suit), RankStr(c2.rank), SuitStr(c2.suit));
-	}
-	*/
 	return 69420;
 }
 
@@ -233,10 +211,12 @@ void doInput(GtkWidget *widget, gpointer data) {
 			//submit move
 			int tturn = g->gs.playerTurn;
 			STAGES tstage = g->gs.stage;
+			g->gs = game;
 
-			g->gs = DoGame(game);
-			
+			g->gs = DoGame(g);	
+
 			//check if a move was executed (if not invalid move)
+			//
 			if (g->gs.playerTurn == tturn && g->gs.stage == tstage) {
 				gtk_label_set_text(GTK_LABEL(g->game.mainLabel), "Invalid move!");
 				gtk_widget_show(g->game.mainLabel);
@@ -351,10 +331,13 @@ void *connection_handler(void *game)
 	Game* g = (Game*)game;
 	int sock = g->fd;
 	PacketType request = GS_REQUEST;
-	struct timespec tim, tim2;
+	struct timespec tim, tim2, tim3;
 	tim.tv_sec = 0;
+	tim3.tv_sec = 10;
+	tim3.tv_nsec = 0;
 	tim.tv_nsec = 100000000L;
 	while(1){
+		if (g->gs.stage == WIN) nanosleep(&tim3, &tim2);
 		write(sock, &request, sizeof(request));
 		read(sock, &g->gs, sizeof(g->gs));
 		nanosleep(&tim, &tim2);
@@ -502,10 +485,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 		//Draw pot
 		sprintf(buffer, "Pot: $%d", game.pot);
-		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + CARD_H, 15);
 		//Draw current call
 		sprintf(buffer, "Current Call: $%d", game.currCall);
-		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		//Draw balance
+		sprintf(buffer, "Balance: $%d", game.players[g->ID].Balance);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.5*CARD_H, 15);
 
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
@@ -597,10 +583,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 		//Draw pot
 		sprintf(buffer, "Pot: $%d", game.pot);
-		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + CARD_H, 15);
 		//Draw current call
 		sprintf(buffer, "Current Call: $%d", game.currCall);
-		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		//Draw balance
+		sprintf(buffer, "Balance: $%d", game.players[g->ID].Balance);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.5*CARD_H, 15);
 
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
@@ -690,10 +679,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 		//Draw pot
 		sprintf(buffer, "Pot: $%d", game.pot);
-		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + CARD_H, 15);
 		//Draw current call
 		sprintf(buffer, "Current Call: $%d", game.currCall);
-		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		//Draw balance
+		sprintf(buffer, "Balance: $%d", game.players[g->ID].Balance);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.5*CARD_H, 15);
 
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
@@ -776,10 +768,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 		//Draw pot
 		sprintf(buffer, "Pot: $%d", game.pot);
-		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + CARD_H, 15);
 		//Draw current call
 		sprintf(buffer, "Current Call: $%d", game.currCall);
-		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		//Draw balance
+		sprintf(buffer, "Balance: $%d", game.players[g->ID].Balance);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.5*CARD_H, 15);
 
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
@@ -852,8 +847,12 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 	case WIN:
 		{
-		sprintf(buffer, "%s is the winner!", StageStr(game.stage));
-		draw_title(cr, buffer, ((width) / 2) - 3.5 * (CARD_W / 2), (height) / 2 - CARD_H, 30);
+		int weiner = findWeiner(game);
+		if (weiner == g->ID) sprintf(buffer, "You are the winner!");
+		else if (weiner != -1) sprintf(buffer, "Player %d is the winner!", weiner);
+		else sprintf(buffer, "Tied between playersimplent this later plz");
+		
+		draw_title(cr, buffer, ((width) / 2) - 3.0 * (CARD_W), (height) / 2 - CARD_H, 30);
 		memset(buffer, 0, 100);
 		// community deck (5 revealing)
 		for (int i = 0; i <= 4; i++)
@@ -863,10 +862,13 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 
 		//Draw pot
 		sprintf(buffer, "Pot: $%d", game.pot);
-		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W / 2), (height) / 2 + CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + CARD_H, 15);
 		//Draw current call
 		sprintf(buffer, "Current Call: $%d", game.currCall);
-		draw_text(cr, buffer, ((width) / 2) - 1.1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.25*CARD_H, 15);
+		//Draw balance
+		sprintf(buffer, "Balance: $%d", game.players[g->ID].Balance);
+		draw_text(cr, buffer, ((width) / 2) - 1 * (CARD_W), (height) / 2 + 1.5*CARD_H, 15);
 
 		// your own hand!
 		draw_cards(cr, game.players[g->ID].card1, ((width - CARD_W) / 2 - (CARD_W / 2)), (height - CARD_H), 0.1);
@@ -940,94 +942,114 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 	cairo_destroy(cr);
 }
 
-GAMESTATE DoGame(GAMESTATE game) {
+GAMESTATE DoGame(Game *g) {
+	GAMESTATE game = g->gs;
 	//check player actions
-	int validmove = 1;
-	if (game.players[game.playerTurn].Balance >= game.currCall) {
-		switch(game.players[game.playerTurn].action){
-		case CALL:
-			if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
-				game.players[game.playerTurn].Bid = game.currCall;
-				game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-				game.pot += game.currCall;
-			}else{
-		validmove = 0;
-			}
-		break;
+	if (game.stage == WIN) {
+		//find first online player and task them with setting up game
+		int first;
+		for (first = 0; first < game.numberPlayers; first++) if (game.players[first].online) break;
+		if (g->ID == first) {
+			GAMESTATE localgs = g->gs;
+			localgs.GameCount++;
+			localgs.shuffleDeck = ShuffleCards(INIT());
+			localgs.stage = PREFLOP;
+			localgs = AssignCards(localgs);
 
-		case RAISE:
-			if (game.players[game.playerTurn].Balance - game.players[game.playerTurn].raiseAmt >= 0){
-				game.currCall += game.players[game.playerTurn].raiseAmt;
-				game.players[game.playerTurn].Bid = game.currCall;
-				game.players[game.playerTurn].Balance = game.players[game.playerTurn].Balance-game.currCall;
-				game.pot += game.currCall;
-			}
-			else validmove = 0;
-		break;
+			localgs = distributePot(localgs);
 
-		case CHECK:
-			//can do it better by resetting bid & checking if player is at call
-			if(game.players[game.playerTurn].Bid == game.currCall || (game.players[game.playerTurn].Bid == -1 && game.currCall == 0)){
-			game.players[game.playerTurn].Bid = game.currCall;
+			PacketType update = GS_UPDATE;
+			write(g->fd, &update, sizeof(update));
+			write(g->fd, &localgs, sizeof(localgs));
+		}
+	}
+	else {
+		int validmove = 1;
+		if (game.players[game.playerTurn].Balance >= game.currCall - game.players[game.playerTurn].Bid || (game.currCall == 0 && game.players[game.playerTurn].Bid == -1) ) {
+			switch(game.players[game.playerTurn].action){
+			case CALL:
+				if(game.currCall != 0 && game.players[game.numberPlayers].Bid != game.currCall){
+					game.players[game.playerTurn].Balance -= game.currCall - game.players[game.playerTurn].Bid;
+					game.pot += game.currCall - game.players[game.playerTurn].Bid;
+					game.players[game.playerTurn].Bid = game.currCall;
+				} else validmove = 0;
 			break;
-			}
-			else validmove = 0;
-		break;
 
-		case FOLD:
-			int count = 0;
-			for (int i = 0; i < game.numberPlayers; i++) {
-				if (game.players[game.numberPlayers].action != FOLD) count++;
-			}
-			if (count == 1) game.stage = WIN;
+			case RAISE:
+				if (game.players[game.playerTurn].Balance - game.players[game.playerTurn].raiseAmt >= 0){
+					game.currCall += game.players[game.playerTurn].raiseAmt;
+					game.players[game.playerTurn].Bid = game.currCall;
+					game.players[game.playerTurn].Balance -= game.players[game.playerTurn].raiseAmt;
+					game.pot += game.players[game.playerTurn].raiseAmt;
+				}
+				else validmove = 0;
 			break;
+
+			case CHECK:
+				//can do it better by resetting bid & checking if player is at call
+				if(game.players[game.playerTurn].Bid == game.currCall || (game.players[game.playerTurn].Bid == -1 && game.currCall == 0)){
+					game.players[game.playerTurn].Bid = game.currCall;
+				break;
+				}
+				else validmove = 0;
+			break;
+
+			case FOLD:
+				int count = 0;
+				for (int i = 0; i < game.numberPlayers; i++) {
+					if (game.players[game.numberPlayers].action != FOLD) count++;
+				}
+				if (count == 1) game.stage = WIN;
+				break;
 
 			default:
-			validmove = 0;
-		break;
+				validmove = 0;
+			break;
+			}
+		} else {
+			game.players[game.numberPlayers].action == FOLD;
 		}
-	} else {
-		game.players[game.numberPlayers].action == FOLD;
-	}
 
 
-	if (nUnfolded(game) != 1) {
-	    if(validmove == 1){
-			//stage change logic
-			if(EQUALBIDS(game) == 1 && (game.stage != PREFLOP || (game.stage == PREFLOP && game.players[game.playerTurn].role == BIGBLIND))){
+		if (nUnfolded(game) != 1) {
+		    if(validmove == 1){
+				//stage change logic
+				if(EQUALBIDS(game) == 1 && ((game.stage != PREFLOP) || (game.stage == PREFLOP && game.players[game.playerTurn].Bid != 10)  || (game.stage == PREFLOP && game.players[game.playerTurn].role == BIGBLIND && game.players[game.playerTurn].Bid == 10))){
+					for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
 
-				//find first player after smallblind
-				bool foundSB = false;
-				for (int i = 0; i < game.numberPlayers; i++) {
-					//if haven't found small blind, continue searching
-					if (!foundSB) foundSB = (game.players[i].role == SMALLBLIND);
+					//find first player after smallblind
+					bool foundSB = false;
+					for (int i = 0; i < game.numberPlayers; i++) {
+						//if haven't found small blind, continue searching
+						if (!foundSB) foundSB = (game.players[i].role == SMALLBLIND);
 
-					//if small blind or closest unfolded player to sb, make it their turn
-					if (foundSB && game.players[i].action != FOLD) {
-						game.playerTurn = i;
-						break;
+						//if small blind or closest unfolded player to sb, make it their turn
+						if (foundSB && game.players[i].action != FOLD) {
+							game.playerTurn = i;
+							game.players[i].Bid = 0;
+							break;
+						}
+
+						//if the smallblind is the last player and is folded
+						if (game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
 					}
 
-					//if the smallblind is the last player and is folded
-					if (game.players[i].action == FOLD && i == game.numberPlayers) i = 0;
+					game.currCall = 0;
+					game.stage++;
 				}
+				//turn incrementing logic
+				else {
+					while (true) {
+						if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
+						else (game.playerTurn = 0);
 
-				game.currCall = 0;
-				for (int i = 0; i < game.numberPlayers; i++) game.players[i].Bid = -1;
-				game.stage++;
-			}
-			//turn incrementing logic
-			else {
-				while (true) {
-					if (game.playerTurn < game.numberPlayers-1) game.playerTurn++;
-					else (game.playerTurn = 0);
-
-					if (game.players[game.playerTurn].action != FOLD) break;
-					}
+						if (game.players[game.playerTurn].action != FOLD) break;
+						}
+				}
 			}
 		}
+		else game.stage = WIN;
 	}
-	else game.stage = WIN;
 
   return game;
 }

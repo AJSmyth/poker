@@ -105,7 +105,9 @@ GAMESTATE AssignCards (GAMESTATE game)
         game.pot=15;
     }
     game.currCall = 10;
-    game.playerTurn = 2;
+    if (game.numberPlayers != 2) game.playerTurn = 2;
+    else game.playerTurn = 0;
+
     return game;
 }
 
