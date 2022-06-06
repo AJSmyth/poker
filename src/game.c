@@ -51,22 +51,9 @@ int nUnfolded(GAMESTATE game) {
   }
   return count;
 }
-GAMESTATE distributePot(GAMESTATE game) {
-	int weiner = findWeiner(game);
-	if (weiner != -1) {
-		game.players[weiner].Balance = game.pot;
-		game.pot = 0;
-	}
-	else {
-		//olivers stuff pog
-		puts("\nCUMPOOP");
-	}
-	return game;
-}
 
 int findWeiner(GAMESTATE game) {
 	int weiner, highPriority = 0;
-	bool tie = false;
 	for (int i = 0; i < game.numberPlayers; ++i) {
 		int currPriority = CheckPlayer(game, i);
 		if (currPriority > highPriority) {
@@ -74,14 +61,57 @@ int findWeiner(GAMESTATE game) {
 			weiner = i;
 		}
 		else if (currPriority == highPriority) {
-			tie = true;
-			highPriority = -1;
 			weiner = -1;
 		}
 	}
 	return weiner;
 }
 
+GAMESTATE TieBreaker(GAMESTATE game) {
+    int priorities[game.numberPlayers];
+    for (int i=0; i<game.numberPlayers; i++) {
+        priorities[i] = getMaxPriorityOfThePlayer(game, i);
+    }
+
+    //pick the player with the highest priority
+    int maxPriorityValue;
+    int countOfPlayersWhoTied = 0;
+    for (int i=0; i<game.numberPlayers; i++) {
+        maxPriorityValue = maxPriorityValue > priorities[i] ? maxPriorityValue: priorities[i];
+    }
+    for (int i=0; i<game.numberPlayers; i++) {
+        if(priorities[i] == maxPriorityValue);
+        countOfPlayersWhoTied++;
+    }
+    int indexOfplayersTiedForMostPriority[countOfPlayersWhoTied];
+    int k = 0;
+    for (int i=0; i<game.numberPlayers; i++) {
+        if(priorities[i] == maxPriorityValue);
+        indexOfplayersTiedForMostPriority[k] = i;
+        k++;
+    }
+
+    int potToDistribute = game.pot / countOfPlayersWhoTied;
+    game.pot=0;
+    for (int i=0; i<countOfPlayersWhoTied; i++) {
+        game.players[indexOfplayersTiedForMostPriority[i]].Balance += potToDistribute;
+    }
+    return game;
+}
+
+int getMaxPriorityOfThePlayer(GAMESTATE game, int person) {
+    int max = INT_MIN;
+    max = max > IsRoyalFlush(game, person) ? max : IsRoyalFlush(game, person);
+    max = max > IsFourofaKind(game, person) ? max : IsFourofaKind(game, person);
+    max = max > IsFullHouse(game, person) ? max : IsFullHouse(game, person);
+    max = max > IsFlush(game, person) ? max : IsFlush(game, person);
+    max = max > IsStraight(game, person) ? max : IsStraight(game, person);
+    max = max > IsThreeofaKind(game, person) ? max : IsThreeofaKind(game, person);
+    max = max > IsTwoPair(game, person) ? max : IsTwoPair(game, person);
+    max = max > IsOnePair(game, person) ? max : IsOnePair(game, person);
+    max = max > IsHighCard(game, person) ? max : IsHighCard(game, person);
+    return max;
+}
 int CheckPlayer (GAMESTATE game, int PlayerNumber)
 { //The better the card sequence, the higher is the priority number returned.
     int priority;

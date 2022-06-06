@@ -2,6 +2,7 @@
 #define GAME_H
 #include <stdlib.h>
 #include <stdbool.h>
+#include <limits.h>
 
 GAMESTATE PREFLOP1(GAMESTATE game); //Bidding in PreFlop
 GAMESTATE FLOP1(GAMESTATE game);
@@ -23,7 +24,8 @@ int IsTwoPair (GAMESTATE game, int PlayerNumber);
 int IsOnePair (GAMESTATE game, int PlayerNumber);
 int IsHighCard(GAMESTATE game, int PlayerNumber);
 int findWeiner(GAMESTATE game);
-GAMESTATE distributePot(GAMESTATE game);
+int getMaxPriorityOfThePlayer(GAMESTATE game, int person);
+GAMESTATE TieBreaker(GAMESTATE game);
 
 int LargestinArray (int A[], int B);
 DECK SortbyRank(DECK D);

@@ -223,9 +223,6 @@ void doInput(GtkWidget *widget, gpointer data) {
 			}
 			//if valid move hide the error message
 			else {
-				PacketType update = GS_UPDATE;
-				write(g->fd, &update, sizeof(update));
-				write(g->fd, &g->gs, sizeof(g->gs));
 				gtk_widget_hide(g->game.mainLabel);
 			}
 		}
@@ -337,7 +334,9 @@ void *connection_handler(void *game)
 	tim3.tv_nsec = 0;
 	tim.tv_nsec = 100000000L;
 	while(1){
-		if (g->gs.stage == WIN) nanosleep(&tim3, &tim2);
+		if (g->gs.stage == WIN){
+		       	nanosleep(&tim3, &tim2);
+		}
 		write(sock, &request, sizeof(request));
 		read(sock, &g->gs, sizeof(g->gs));
 		nanosleep(&tim, &tim2);
@@ -945,25 +944,7 @@ static void paint(GtkWidget *widget, GdkEventExpose *eev, gpointer data)
 GAMESTATE DoGame(Game *g) {
 	GAMESTATE game = g->gs;
 	//check player actions
-	if (game.stage == WIN) {
-		//find first online player and task them with setting up game
-		int first;
-		for (first = 0; first < game.numberPlayers; first++) if (game.players[first].online) break;
-		if (g->ID == first) {
-			GAMESTATE localgs = g->gs;
-			localgs.GameCount++;
-			localgs.shuffleDeck = ShuffleCards(INIT());
-			localgs.stage = PREFLOP;
-			localgs = AssignCards(localgs);
-
-			localgs = distributePot(localgs);
-
-			PacketType update = GS_UPDATE;
-			write(g->fd, &update, sizeof(update));
-			write(g->fd, &localgs, sizeof(localgs));
-		}
-	}
-	else {
+	if (game.stage != WIN) {
 		int validmove = 1;
 		if (game.players[game.playerTurn].Balance >= game.currCall - game.players[game.playerTurn].Bid || (game.currCall == 0 && game.players[game.playerTurn].Bid == -1) ) {
 			switch(game.players[game.playerTurn].action){
@@ -995,11 +976,13 @@ GAMESTATE DoGame(Game *g) {
 			break;
 
 			case FOLD:
+				{
 				int count = 0;
 				for (int i = 0; i < game.numberPlayers; i++) {
 					if (game.players[game.numberPlayers].action != FOLD) count++;
 				}
 				if (count == 1) game.stage = WIN;
+				}
 				break;
 
 			default:
@@ -1035,7 +1018,31 @@ GAMESTATE DoGame(Game *g) {
 					}
 
 					game.currCall = 0;
-					game.stage++;
+
+					if (++game.stage == WIN) {
+						//find first online player and task them with setting up game
+						int first;
+						for (first = 0; first < game.numberPlayers; first++) if (game.players[first].online) break;
+						GAMESTATE localgs = g->gs;
+						localgs.GameCount++;
+						localgs.shuffleDeck = ShuffleCards(INIT());
+						localgs.stage = PREFLOP;
+						localgs = AssignCards(localgs);
+
+						localgs = TieBreaker(localgs);
+						
+						updateData(g);
+						PacketType update = GS_UPDATE;
+						if (write(g->fd, &update, sizeof(update)) < 0) perror("First write");
+						if (write(g->fd, &localgs, sizeof(localgs)) < 0) perror("Second write");
+						puts("FSDF");
+					}
+					else {
+						g->gs = game;
+						PacketType update = GS_UPDATE;
+						write(g->fd, &update, sizeof(update));
+						write(g->fd, &g->gs, sizeof(g->gs));
+					}
 				}
 				//turn incrementing logic
 				else {
@@ -1045,10 +1052,15 @@ GAMESTATE DoGame(Game *g) {
 
 						if (game.players[game.playerTurn].action != FOLD) break;
 						}
+					g->gs = game;
+					PacketType update = GS_UPDATE;
+					write(g->fd, &update, sizeof(update));
+					write(g->fd, &g->gs, sizeof(g->gs));
 				}
 			}
 		}
 		else game.stage = WIN;
+
 	}
 
   return game;
