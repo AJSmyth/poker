@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+#include <limits.h>
 
 
 int EQUALBIDS(GAMESTATE game)
@@ -47,7 +48,7 @@ int Sequence_Winner (GAMESTATE game)
         {
             if (A[i] == A[j] && i == LargestinArray (A, i))
             {
-                Winner = TieBreaker (i, j, A[i],  game);
+                //Winner = TieBreaker (i, j, A[i],  game);
                 if (Winner == -1)
                 {
                     game.SplitPotPlayers[0] = i;
@@ -68,717 +69,82 @@ int Sequence_Winner (GAMESTATE game)
     return Winner;
 }
 
-int TieBreaker (int a, int b, int Priority, GAMESTATE game)
-{ 
-    //PLAYER P = game.players[a];
-    int x;
-    if(Priority <= 14)
-    {
-        // both players have high card
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
+int test_for_tiebreaker(void) 
+{
+    //gcc -std=c11 src/game.c src/deck.c -o bin/test -g
+    GAMESTATE game;
+    CARD card1;
+    card1.rank = ACE;
+    card1.suit = HEARTS;
+    CARD card2;
+    card2.rank = ACE;
+    card2.suit = SPADES;
+    CARD card3;
+    card3.rank = ACE;
+    card3.suit = CLUBS;
+    CARD card4;
+    card4.rank = ACE;
+    card4.suit = DIAMONDS;
 
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        for (int i = 6; i > 1; i--)
-        {
-            // Go through the deck from low to high and compare the top 5 cards
-            // Need to make sure that deck is in ascending order
-            if(NewDeck_P1.cards[i].rank > NewDeck_P2.cards[i].rank)
-            {
-                return a;
-            }
-            else if (NewDeck_P1.cards[i].rank < NewDeck_P2.cards[i].rank)
-            {
-                return b;
-            }
-            else
-            {
-                continue;
-            }
-        }
-
-        //players have the same high 5 cards
-        return -1;
+    game.numberPlayers = 2;
+    game.players[0].Balance = 500;
+    game.players[1].Balance = 600;
+    game.pot = 1000;
+    game.players[0].card1 = card1;
+    game.players[0].card2 = card2;
+    game.players[1].card1 = card3;
+    game.players[1].card2 = card4;
+    game = TieBreaker(game);
+    printf("Player 1: actual %5d, expecting %5d\n", game.players[0].Balance, 1000);
+    printf("Player 2: actual %5d, expecting %5d\n", game.players[1].Balance, 1100);
+    printf("Pot:      actual %5d, expecting %5d\n", game.pot, 0);
+    
+    return 0;
+}
+GAMESTATE TieBreaker(GAMESTATE game) {
+    int priorities[game.numberPlayers];
+    for (int i=0; i<game.numberPlayers; i++) {
+        priorities[i] = getMaxPriorityOfThePlayer(game, i);
     }
 
-    if (Priority == 15)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        CARD Deck1_HighCard;
-        CARD Deck2_HighCard;
-
-        int x;
-        // both players have high card
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        for (int a = 6 ; a >= 1 ; a--)
-        {
-            if (NewDeck_P1.cards[a].rank == NewDeck_P1.cards[a-1].rank)
-            {
-                Deck1_HighCard = NewDeck_P1.cards[a];
-                break;
-            }
-        }
-
-        for (int a = 6 ; a >= 1 ; a--)
-        {
-            if (NewDeck_P2.cards[a].rank == NewDeck_P2.cards[a-1].rank)
-            {
-                Deck2_HighCard = NewDeck_P2.cards[a];
-                break;
-            }
-        }
-        if (Deck1_HighCard.rank > Deck2_HighCard.rank)
-        {
-            return a;
-        }
-
-        else if (Deck1_HighCard.rank < Deck2_HighCard.rank)
-        {
-            return b;
-        }
-
-        else if (Deck1_HighCard.rank == Deck2_HighCard.rank)
-        {
-            for (int X = 6; X>1; X--)
-            {
-                // Go through the deck from low to high and compare the top 5 cards
-                // Need to make sure that deck is in ascending order
-            
-                if(NewDeck_P1.cards[X].rank > NewDeck_P2.cards[X].rank)
-                {
-                    return a;
-                }
-
-                else if (NewDeck_P1.cards[X].rank < NewDeck_P2.cards[X].rank)
-                {
-                    return b;
-                }
-            }
-        }
-        return -1;
+    //pick the player with the highest priority
+    int maxPriorityValue;
+    int countOfPlayersWhoTied = 0;
+    for (int i=0; i<game.numberPlayers; i++) {
+        maxPriorityValue = maxPriorityValue > priorities[i] ? maxPriorityValue: priorities[i];
+    }
+    for (int i=0; i<game.numberPlayers; i++) {
+        if(priorities[i] == maxPriorityValue);
+        countOfPlayersWhoTied++;
+    }
+    int indexOfplayersTiedForMostPriority[countOfPlayersWhoTied];
+    int k = 0;
+    for (int i=0; i<game.numberPlayers; i++) {
+        if(priorities[i] == maxPriorityValue);
+        indexOfplayersTiedForMostPriority[k] = i;
+        k++;
     }
 
-    if (Priority == 16)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        CARD Deck1_PairCard1;
-        CARD Deck1_PairCard2;
-        CARD Deck2_PairCard1;
-        CARD Deck2_PairCard2;
-
-        int x, BREAK;
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        for (int X = 6 ;X >= 0 ; X--)
-        { //Find which 2 nunbers make pairs in the two pair in Deck 1
-            if (NewDeck_P1.cards[X].rank == NewDeck_P1.cards[X-1].rank)
-            {
-                Deck1_PairCard1 = NewDeck_P1.cards[X];
-                X = X-1;
-
-                for (X ; X >= 0 ; X--)
-                {
-                    if (NewDeck_P1.cards[X].rank == NewDeck_P1.cards[X-1].rank)
-                    {
-                        Deck1_PairCard2 = NewDeck_P1.cards[X];
-                        BREAK = 1;
-                        break;
-                    }
-                }
-            }
-            if (BREAK == 1)
-            {
-                BREAK = 0;
-                break;
-            }
-        }
-
-        for (int X = 6 ; X >= 0 ; X--)
-        { //Find which 2 nunbers make pairs in the two pair in Deck 2
-            if (NewDeck_P2.cards[X].rank == NewDeck_P2.cards[X-1].rank)
-            {
-                Deck2_PairCard1 = NewDeck_P2.cards[X];
-                X = X-1;
-
-                for (X; X >= 0 ; X--)
-                {
-                    if (NewDeck_P2.cards[X].rank == NewDeck_P2.cards[X-1].rank)
-                    {
-                        Deck2_PairCard2 = NewDeck_P2.cards[X];
-                        BREAK = 1;
-                        break;
-                    }
-                }
-            }
-            if (BREAK == 1)
-            {
-                BREAK = 0;
-                break;
-            }
-        }
-
-        if (Deck1_PairCard1.rank > Deck2_PairCard1.rank )
-        {
-            return a;
-        }
-
-        else if  (Deck1_PairCard1.rank < Deck2_PairCard1.rank )
-        {
-            return b;
-        }
-
-        else if (Deck1_PairCard1.rank  == Deck2_PairCard1.rank )
-        {
-            if (Deck1_PairCard2.rank  > Deck2_PairCard2.rank )
-            {
-                return a;
-            }
-
-            else if (Deck1_PairCard2.rank  < Deck2_PairCard2.rank )
-            {
-                return b;
-            }
-
-            else if (Deck1_PairCard2.rank  == Deck2_PairCard2.rank )
-            {
-                for (int Y = 6; Y>1; Y--)
-                {
-                    // Go through the deck from low to high and compare the top 5 cards
-                    // Need to make sure that deck is in ascending order
-            
-                    if(NewDeck_P1.cards[Y].rank > NewDeck_P2.cards[Y].rank)
-                    {
-                        return a;
-                    }
-
-                    else if (NewDeck_P1.cards[Y].rank < NewDeck_P2.cards[Y].rank)
-                    {
-                        return b;
-                    }
-                }
-            }
-        }
-        return -1;
+    int potToDistribute = game.pot / countOfPlayersWhoTied;
+    game.pot=0;
+    for (int i=0; i<countOfPlayersWhoTied; i++) {
+        game.players[indexOfplayersTiedForMostPriority[i]].Balance += potToDistribute;
     }
-
-    if (Priority == 17)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        CARD Deck1_HighCard;
-        CARD Deck2_HighCard;
-
-        int x;
-        // both players have high card
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        for (int a = 6 ; a >= 1 ; a--)
-        {
-            if (NewDeck_P1.cards[a].rank == NewDeck_P1.cards[a-1].rank)
-            {
-                Deck1_HighCard = NewDeck_P1.cards[a];
-                break;
-            }
-        }
-
-        for (int a = 6 ; a >= 1 ; a--)
-        {
-            if (NewDeck_P2.cards[a].rank == NewDeck_P2.cards[a-1].rank)
-            {
-                Deck2_HighCard = NewDeck_P2.cards[a];
-                break;
-            }
-        }
-        if (Deck1_HighCard.rank > Deck2_HighCard.rank)
-        {
-            return a;
-        }
-
-        else if (Deck1_HighCard.rank < Deck2_HighCard.rank)
-        {
-            return b;
-        }
-
-        else if (Deck1_HighCard.rank == Deck2_HighCard.rank)
-        {
-            for (int X = 6; X>1; X--)
-            {
-                // Go through the deck from low to high and compare the top 5 cards
-                // Need to make sure that deck is in ascending order
-            
-                if(NewDeck_P1.cards[X].rank > NewDeck_P2.cards[X].rank)
-                {
-                    return a;
-                }
-
-                else if (NewDeck_P1.cards[X].rank < NewDeck_P2.cards[X].rank)
-                {
-                    return b;
-                }
-            }
-        }
-        return -1;
-    }
-
-    if (Priority == 18 || Priority == 22)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        CARD Deck1_HighCard;
-        CARD Deck2_HighCard;
-
-        int x;
-        // both players have high card
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        if (NewDeck_P1.cards[6].rank == NewDeck_P1.cards[5].rank + 1 && NewDeck_P1.cards[5].rank == NewDeck_P1.cards[4].rank + 1 && NewDeck_P1.cards[4].rank == NewDeck_P1.cards[3].rank + 1 && NewDeck_P1.cards[3].rank == NewDeck_P1.cards[2].rank + 1)
-        {
-            Deck1_HighCard = NewDeck_P1.cards[6];
-        }
-
-        else if (NewDeck_P1.cards[2].rank == NewDeck_P1.cards[1].rank + 1 && NewDeck_P1.cards[5].rank == NewDeck_P1.cards[4].rank + 1 && NewDeck_P1.cards[4].rank == NewDeck_P1.cards[3].rank + 1 && NewDeck_P1.cards[3].rank == NewDeck_P1.cards[2].rank + 1)
-        {
-            Deck1_HighCard = NewDeck_P1.cards[5];
-        }
-
-        else if (NewDeck_P1.cards[1].rank == NewDeck_P1.cards[0].rank + 1 && NewDeck_P1.cards[5].rank == NewDeck_P1.cards[4].rank + 1 && NewDeck_P1.cards[4].rank == NewDeck_P1.cards[3].rank + 1 && NewDeck_P1.cards[3].rank == NewDeck_P1.cards[2].rank + 1)
-        {
-            Deck1_HighCard = NewDeck_P1.cards[4];
-        }
-
-        if (NewDeck_P2.cards[6].rank == NewDeck_P2.cards[5].rank + 1 && NewDeck_P2.cards[5].rank == NewDeck_P2.cards[4].rank + 1 && NewDeck_P2.cards[4].rank == NewDeck_P2.cards[3].rank + 1 && NewDeck_P2.cards[3].rank == NewDeck_P2.cards[2].rank + 1)
-        {
-            Deck2_HighCard = NewDeck_P2.cards[6];
-        }
-
-        else if (NewDeck_P2.cards[2].rank == NewDeck_P2.cards[1].rank + 1 && NewDeck_P2.cards[5].rank == NewDeck_P2.cards[4].rank + 1 && NewDeck_P2.cards[4].rank == NewDeck_P2.cards[3].rank + 1 && NewDeck_P2.cards[3].rank == NewDeck_P2.cards[2].rank + 1)
-        {
-            Deck2_HighCard = NewDeck_P2.cards[5];
-        }
-
-        else if (NewDeck_P2.cards[1].rank == NewDeck_P2.cards[0].rank + 1 && NewDeck_P2.cards[5].rank == NewDeck_P2.cards[4].rank + 1 && NewDeck_P2.cards[4].rank == NewDeck_P2.cards[3].rank + 1 && NewDeck_P2.cards[3].rank == NewDeck_P2.cards[2].rank + 1)
-        {
-            Deck2_HighCard = NewDeck_P2.cards[4];
-        }
-
-        if (Deck1_HighCard.rank > Deck2_HighCard.rank )
-        {
-            return a;
-        }
-
-        else if (Deck1_HighCard.rank < Deck2_HighCard.rank)
-        {
-            return b;
-        }
-
-        return -1;
-    }
-
-    if (Priority == 19)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        DECK NewDeck_P1_Rank;
-        DECK NewDeck_P2_Rank;
-
-        CARD Deck1_HighCard;
-        CARD Deck2_HighCard;
-
-        int x;
-        // both players have high card
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbySuit(NewDeck_P1);
-        NewDeck_P2 = SortbySuit(NewDeck_P2);
-
-        //Take the cards of the saame suit into a new Deck, and sort them by rank for each player
-        if (NewDeck_P1.cards[6].suit == NewDeck_P1.cards[5].suit && NewDeck_P1.cards[5].suit == NewDeck_P1.cards[4].suit && NewDeck_P1.cards[4].suit == NewDeck_P1.cards[3].suit && NewDeck_P1.cards[3].suit == NewDeck_P1.cards[2].suit)
-        {
-            NewDeck_P1_Rank.cards[0] = NewDeck_P1.cards[2];
-            NewDeck_P1_Rank.cards[1] = NewDeck_P1.cards[3];
-            NewDeck_P1_Rank.cards[2] = NewDeck_P1.cards[4];
-            NewDeck_P1_Rank.cards[3] = NewDeck_P1.cards[5];
-            NewDeck_P1_Rank.cards[4] = NewDeck_P1.cards[6];
-            NewDeck_P1_Rank = SortbyRank (NewDeck_P1_Rank);
-        }
-
-        else if (NewDeck_P1.cards[2].suit == NewDeck_P1.cards[1].suit && NewDeck_P1.cards[5].suit == NewDeck_P1.cards[4].suit && NewDeck_P1.cards[4].suit == NewDeck_P1.cards[3].suit && NewDeck_P1.cards[3].suit == NewDeck_P1.cards[2].suit)
-        {
-            NewDeck_P1_Rank.cards[0] = NewDeck_P1.cards[2];
-            NewDeck_P1_Rank.cards[1] = NewDeck_P1.cards[3];
-            NewDeck_P1_Rank.cards[2] = NewDeck_P1.cards[4];
-            NewDeck_P1_Rank.cards[3] = NewDeck_P1.cards[5];
-            NewDeck_P1_Rank.cards[4] = NewDeck_P1.cards[1];
-            NewDeck_P1_Rank = SortbyRank (NewDeck_P1_Rank);
-        }
-
-        else if (NewDeck_P1.cards[2].suit == NewDeck_P1.cards[1].suit && NewDeck_P1.cards[1].suit == NewDeck_P1.cards[0].suit && NewDeck_P1.cards[4].suit == NewDeck_P1.cards[3].suit && NewDeck_P1.cards[3].suit == NewDeck_P1.cards[2].suit)
-        {
-            NewDeck_P1_Rank.cards[0] = NewDeck_P1.cards[2];
-            NewDeck_P1_Rank.cards[1] = NewDeck_P1.cards[3];
-            NewDeck_P1_Rank.cards[2] = NewDeck_P1.cards[4];
-            NewDeck_P1_Rank.cards[3] = NewDeck_P1.cards[0];
-            NewDeck_P1_Rank.cards[4] = NewDeck_P1.cards[1];
-            NewDeck_P1_Rank = SortbyRank (NewDeck_P1_Rank);
-        }
-        
-        if (NewDeck_P2.cards[6].suit == NewDeck_P2.cards[5].suit && NewDeck_P2.cards[5].suit == NewDeck_P2.cards[4].suit && NewDeck_P2.cards[4].suit == NewDeck_P2.cards[3].suit && NewDeck_P2.cards[3].suit == NewDeck_P2.cards[2].suit)
-        {
-            NewDeck_P2_Rank.cards[0] = NewDeck_P2.cards[2];
-            NewDeck_P2_Rank.cards[1] = NewDeck_P2.cards[3];
-            NewDeck_P2_Rank.cards[2] = NewDeck_P2.cards[4];
-            NewDeck_P2_Rank.cards[3] = NewDeck_P2.cards[5];
-            NewDeck_P2_Rank.cards[4] = NewDeck_P2.cards[6];
-            NewDeck_P2_Rank = SortbyRank (NewDeck_P2_Rank);
-        }
-
-        else if (NewDeck_P2.cards[2].suit == NewDeck_P2.cards[1].suit && NewDeck_P2.cards[5].suit == NewDeck_P2.cards[4].suit && NewDeck_P2.cards[4].suit == NewDeck_P2.cards[3].suit && NewDeck_P2.cards[3].suit == NewDeck_P2.cards[2].suit)
-        {
-            NewDeck_P2_Rank.cards[0] = NewDeck_P2.cards[2];
-            NewDeck_P2_Rank.cards[1] = NewDeck_P2.cards[3];
-            NewDeck_P2_Rank.cards[2] = NewDeck_P2.cards[4];
-            NewDeck_P2_Rank.cards[3] = NewDeck_P2.cards[5];
-            NewDeck_P2_Rank.cards[4] = NewDeck_P2.cards[1];
-            NewDeck_P2_Rank = SortbyRank (NewDeck_P2_Rank);
-        }
-
-        else if (NewDeck_P2.cards[2].suit == NewDeck_P2.cards[1].suit && NewDeck_P2.cards[1].suit == NewDeck_P2.cards[0].suit && NewDeck_P2.cards[4].suit == NewDeck_P2.cards[3].suit && NewDeck_P2.cards[3].suit == NewDeck_P2.cards[2].suit)
-        {
-            NewDeck_P2_Rank.cards[0] = NewDeck_P2.cards[2];
-            NewDeck_P2_Rank.cards[1] = NewDeck_P2.cards[3];
-            NewDeck_P2_Rank.cards[2] = NewDeck_P2.cards[4];
-            NewDeck_P2_Rank.cards[3] = NewDeck_P2.cards[0];
-            NewDeck_P2_Rank.cards[4] = NewDeck_P2.cards[1];
-            NewDeck_P2_Rank = SortbyRank (NewDeck_P2_Rank);
-        }
-
-        //Now, NewDeck_P2_Rank and NewDeck_P1_Rank are the same suit decks of different players sorted by rank
-        //We need to find the winning hand now by comparing the high cards of eadch deck
-
-        for (int i = 4; i >= 0; i--)
-        {
-            // Go through the deck from low to high and compare the top 5 cards
-            // Need to make sure that deck is in ascending order
-            if(NewDeck_P1_Rank.cards[i].rank > NewDeck_P2_Rank.cards[i].rank)
-            {
-                return a;
-            }
-            else if (NewDeck_P1_Rank.cards[i].rank < NewDeck_P2_Rank.cards[i].rank)
-            {
-                return b;
-            }
-            else
-            {
-                continue;
-            }
-        }
-
-        //players have the same high 5 cards
-        return -1;
-    }
-
-    if (Priority == 20)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        CARD Deck1_PairCard1;
-        CARD Deck1_PairCard2;
-        CARD Deck2_PairCard1;
-        CARD Deck2_PairCard2;
-
-        int x, BREAK;
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        for (int X = 6 ;X >= 0 ; X--)
-        { //Find which 2 nunbers make pairs in the two pair in Deck 1
-            if (NewDeck_P1.cards[X].rank == NewDeck_P1.cards[X-1].rank)
-            {
-                Deck1_PairCard1 = NewDeck_P1.cards[X];
-                
-                if (NewDeck_P2.cards[X-1].rank == NewDeck_P2.cards[X-2].rank)
-                {
-                    X = X-1;
-                }
-                X = X-1;
-
-                for (X ; X >= 0 ; X--)
-                {
-                    if (NewDeck_P1.cards[X].rank == NewDeck_P1.cards[X-1].rank)
-                    {
-                        Deck1_PairCard2 = NewDeck_P1.cards[X];
-                        BREAK = 1;
-                        break;
-                    }
-                }
-            }
-            if (BREAK == 1)
-            {
-                BREAK = 0;
-                break;
-            }
-        }
-
-        for (int X = 6 ; X >= 0 ; X--)
-        { //Find which 2 nunbers make pairs in the two pair in Deck 2
-            if (NewDeck_P2.cards[X].rank == NewDeck_P2.cards[X-1].rank)
-            {
-                Deck2_PairCard1 = NewDeck_P2.cards[X];
-                
-                if (NewDeck_P2.cards[X-1].rank == NewDeck_P2.cards[X-2].rank)
-                {
-                    X = X-1;
-                }
-                X = X-1;
-
-                for (X; X >= 0 ; X--)
-                {
-                    if (NewDeck_P2.cards[X].rank == NewDeck_P2.cards[X-1].rank)
-                    {
-                        Deck2_PairCard2 = NewDeck_P2.cards[X];
-                        BREAK = 1;
-                        break;
-                    }
-                }
-            }
-            if (BREAK == 1)
-            {
-                BREAK = 0;
-                break;
-            }
-        }
-
-        if (Deck1_PairCard1.rank > Deck2_PairCard1.rank )
-        {
-            return a;
-        }
-
-        else if  (Deck1_PairCard1.rank < Deck2_PairCard1.rank )
-        {
-            return b;
-        }
-
-        else if (Deck1_PairCard1.rank  == Deck2_PairCard1.rank )
-        {
-            if (Deck1_PairCard2.rank  > Deck2_PairCard2.rank )
-            {
-                return a;
-            }
-
-            else if (Deck1_PairCard2.rank  < Deck2_PairCard2.rank )
-            {
-                return b;
-            }
-
-            else if (Deck1_PairCard2.rank  == Deck2_PairCard2.rank )
-            {
-                for (int Y = 6; Y>1; Y--)
-                {
-                    // Go through the deck from low to high and compare the top 5 cards
-                    // Need to make sure that deck is in ascending order
-            
-                    if(NewDeck_P1.cards[Y].rank > NewDeck_P2.cards[Y].rank)
-                    {
-                        return a;
-                    }
-
-                    else if (NewDeck_P1.cards[Y].rank < NewDeck_P2.cards[Y].rank)
-                    {
-                        return b;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
-
-    if (Priority == 21)
-    {
-        DECK NewDeck_P1;
-        DECK NewDeck_P2;
-        CARD Deck1_PairCard;
-        CARD Deck2_PairCard;
-
-        int x, BREAK;
-
-        for (x = 0; x< 5; x++)
-        {
-            NewDeck_P1.cards[x] = game.communityCards.cards[x];
-            NewDeck_P2.cards[x] = game.communityCards.cards[x]; 
-        }
-
-        NewDeck_P1.cards[5] = game.players[a].card1;
-        NewDeck_P1.cards[6] = game.players[a].card2;
-
-        NewDeck_P2.cards[5] = game.players[b].card1;
-        NewDeck_P2.cards[6] = game.players[b].card2;
-        
-        NewDeck_P1 = SortbyRank(NewDeck_P1);
-        NewDeck_P2 = SortbyRank(NewDeck_P2);
-
-        //Finding the number of the Four of a kind for first player
-        if (NewDeck_P1.cards[6].rank == NewDeck_P1.cards[5].rank && NewDeck_P1.cards[5].rank == NewDeck_P1.cards[4].rank && NewDeck_P1.cards[4].rank == NewDeck_P1.cards[3].rank)
-        {
-            Deck1_PairCard = NewDeck_P1.cards[6];
-        }
-        else if (NewDeck_P1.cards[3].rank == NewDeck_P1.cards[2].rank && NewDeck_P1.cards[5].rank == NewDeck_P1.cards[4].rank && NewDeck_P1.cards[4].rank == NewDeck_P1.cards[3].rank)
-        {
-            Deck1_PairCard = NewDeck_P1.cards[5];
-        }
-        else if (NewDeck_P1.cards[3].rank == NewDeck_P1.cards[2].rank && NewDeck_P1.cards[2].rank == NewDeck_P1.cards[1].rank && NewDeck_P1.cards[4].rank == NewDeck_P1.cards[3].rank)
-        {
-            Deck1_PairCard = NewDeck_P1.cards[4];
-        }
-        else if (NewDeck_P1.cards[3].rank == NewDeck_P1.cards[2].rank && NewDeck_P1.cards[2].rank == NewDeck_P1.cards[1].rank && NewDeck_P1.cards[1].rank == NewDeck_P1.cards[0].rank)
-        {
-            Deck1_PairCard = NewDeck_P1.cards[3];
-        }
-
-        //Finding the number of the Four of a kind for second player
-        if (NewDeck_P2.cards[6].rank == NewDeck_P2.cards[5].rank && NewDeck_P2.cards[5].rank == NewDeck_P2.cards[4].rank && NewDeck_P2.cards[4].rank == NewDeck_P2.cards[3].rank)
-        {
-            Deck2_PairCard = NewDeck_P2.cards[6];
-        }
-        else if (NewDeck_P2.cards[3].rank == NewDeck_P2.cards[2].rank && NewDeck_P2.cards[5].rank == NewDeck_P2.cards[4].rank && NewDeck_P2.cards[4].rank == NewDeck_P2.cards[3].rank)
-        {
-            Deck2_PairCard = NewDeck_P2.cards[5];
-        }
-        else if (NewDeck_P2.cards[3].rank == NewDeck_P2.cards[2].rank && NewDeck_P2.cards[2].rank == NewDeck_P2.cards[1].rank && NewDeck_P2.cards[4].rank == NewDeck_P2.cards[3].rank)
-        {
-            Deck2_PairCard = NewDeck_P2.cards[4];
-        }
-        else if (NewDeck_P2.cards[3].rank == NewDeck_P2.cards[2].rank && NewDeck_P2.cards[2].rank == NewDeck_P2.cards[1].rank && NewDeck_P2.cards[1].rank == NewDeck_P2.cards[0].rank)
-        {
-            Deck2_PairCard = NewDeck_P2.cards[3];
-        }
-
-        if (Deck1_PairCard.rank > Deck2_PairCard.rank )
-        {
-            return a;
-        }
-
-        else if (Deck1_PairCard.rank  < Deck2_PairCard.rank )
-        {
-            return b;
-        }
-
-        else if (Deck1_PairCard.rank  == Deck2_PairCard.rank )
-        {
-
-            for (int X = 6; X>1; X--)
-            {
-                // Go through the deck from low to high and compare the top 5 cards
-                // Need to make sure that deck is in ascending order
-            
-                if(NewDeck_P1.cards[X].rank > NewDeck_P2.cards[X].rank)
-                {
-                    return a;
-                }
-
-                else if (NewDeck_P1.cards[X].rank < NewDeck_P2.cards[X].rank)
-                {
-                    return b;
-                }
-            }
-        }
-    }
+    return game;
+}
+
+int getMaxPriorityOfThePlayer(GAMESTATE game, int person) {
+    int max = INT_MIN;
+    max = max > IsRoyalFlush(game, person) ? max : IsRoyalFlush(game, person);
+    max = max > IsFourofaKind(game, person) ? max : IsFourofaKind(game, person);
+    max = max > IsFullHouse(game, person) ? max : IsFullHouse(game, person);
+    max = max > IsFlush(game, person) ? max : IsFlush(game, person);
+    max = max > IsStraight(game, person) ? max : IsStraight(game, person);
+    max = max > IsThreeofaKind(game, person) ? max : IsThreeofaKind(game, person);
+    max = max > IsTwoPair(game, person) ? max : IsTwoPair(game, person);
+    max = max > IsOnePair(game, person) ? max : IsOnePair(game, person);
+    max = max > IsHighCard(game, person) ? max : IsHighCard(game, person);
+    return max;
 }
 
 int CheckPlayer (GAMESTATE game, int PlayerNumber)

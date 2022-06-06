@@ -10,7 +10,7 @@ int EQUALBIDS(GAMESTATE game); //Checking if all bids are equal to proceed furth
 
 int Sequence_Winner (GAMESTATE game);
 int CheckPlayer (GAMESTATE game, int PlayerNumber);
-int TieBreaker (int i,int j, int Priority, GAMESTATE game);
+GAMESTATE TieBreaker (GAMESTATE game);
 
 int IsRoyalFlush (GAMESTATE game, int PlayerNumber);
 int IsStraightFlush(GAMESTATE game, int PlayerNumber);
@@ -30,4 +30,5 @@ DECK SortbySuit (DECK D);
 void swap(int *a, int *b);
 void random(int arr[], int n);
 int nUnfolded(GAMESTATE game);
+int getMaxPriorityOfThePlayer(GAMESTATE game, int person);
 #endif

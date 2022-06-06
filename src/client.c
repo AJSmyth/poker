@@ -187,6 +187,7 @@ GAMESTATE DoGame(GAMESTATE game) {
   //check player actions
    
 	int validmove = 1;
+	int count = 0;
 	switch(game.players[game.playerTurn].action){
 	case CALL:
 		if(game.currCall != 0 && !(game.players[game.playerTurn].role == BIGBLIND && game.stage == PREFLOP)){
@@ -215,7 +216,6 @@ GAMESTATE DoGame(GAMESTATE game) {
 	break;
 
 	case FOLD:
-	int count = 0;
 	for (int i = 0; i < game.numberPlayers; i++) {
 		if (game.players[game.numberPlayers].action != FOLD) count++;
 	}
